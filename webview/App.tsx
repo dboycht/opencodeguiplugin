@@ -70,7 +70,7 @@ export function App() {
 
   return (
     <div class="app">
-      <Sidebar />
+      {store.sidebarOpen.value && <Sidebar />}
       <div class="main">{store.view.value === "chat" ? <Chat /> : <SettingsView />}</div>
       <Toasts />
     </div>

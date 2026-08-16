@@ -33,11 +33,30 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "opencode",
+          "title": "OpenCode 助手",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "opencode": [
+        {
+          "type": "webview",
+          "id": "opencode.chatView",
+          "name": "OpenCode 助手"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "opencode.open",
         "title": "OpenCode: 打开对话面板",
-        "category": "OpenCode"
+        "category": "OpenCode",
+        "icon": "$(comment-discussion)"
       },
       {
         "command": "opencode.newSession",

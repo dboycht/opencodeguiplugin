@@ -278,12 +278,19 @@ textarea {
   border-bottom: 1px solid var(--panel-border);
 }
 
+.chat-menu {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
 .chat-title {
   font-weight: 600;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-actions {

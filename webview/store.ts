@@ -35,6 +35,11 @@ export const directory = signal("")
 
 export const view = signal<"chat" | "settings">("chat")
 export const search = signal("")
+export const sidebarOpen = signal(typeof window !== "undefined" ? window.innerWidth > 640 : true)
+
+export function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value
+}
 
 export interface Toast {
   id: number

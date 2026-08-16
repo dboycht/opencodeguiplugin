@@ -1,6 +1,6 @@
 import { workspace, window, commands, StatusBarAlignment, type ExtensionContext } from "vscode"
 import { OpenCodeManager } from "./manager"
-import { ChatPanel } from "./panel"
+import { ChatViewProvider } from "./panel"
 
 export function activate(context: ExtensionContext) {
   const config = workspace.getConfiguration("opencode")
@@ -13,7 +13,8 @@ export function activate(context: ExtensionContext) {
   })
   context.subscriptions.push(manager)
 
-  const panel = new ChatPanel(context, manager)
+  const provider = new ChatViewProvider(context, manager)
+  context.subscriptions.push(window.registerWebviewViewProvider(ChatViewProvider.viewType, provider))
 
   // 状态栏
   const statusItem = window.createStatusBarItem("opencode.status", StatusBarAlignment.Left, 100)
@@ -31,7 +32,7 @@ export function activate(context: ExtensionContext) {
       statusItem.tooltip = "正在连接 opencode 服务"
     } else {
       statusItem.text = "$(warning) OpenCode 未连接"
-      statusItem.tooltip = `${manager.lastError || "未连接"}（点击打开面板）`
+      statusItem.tooltip = `${manager.lastError || "未连接"}（点击打开侧边栏）`
     }
   })
 
@@ -40,12 +41,17 @@ export function activate(context: ExtensionContext) {
     manager.setDirectory(workspace.workspaceFolders?.[0]?.uri.fsPath)
   })
 
+  const focusView = () => commands.executeCommand("opencode.chatView.focus")
+
   const register = (id: string, fn: (...args: any[]) => unknown) =>
     context.subscriptions.push(commands.registerCommand(id, fn))
 
-  register("opencode.open", () => panel.reveal())
-  register("opencode.newSession", () => panel.newSessionCommand())
-  register("opencode.pickSession", () => panel.reveal())
+  register("opencode.open", () => focusView())
+  register("opencode.newSession", () => {
+    void focusView()
+    provider.newSession()
+  })
+  register("opencode.pickSession", () => focusView())
   register("opencode.startServer", async () => {
     window.showInformationMessage("正在连接 opencode 服务…")
     await manager.start()
@@ -66,9 +72,8 @@ export function activate(context: ExtensionContext) {
     const text = editor.document.getText(sel)
     const file = editor.document.uri.fsPath
     const lang = editor.document.languageId
-    await panel.insertPrompt(
-      `\`\`\`${lang} 文件:${file.replaceAll("\\", "/")}\n${text}\n\`\`\``,
-    )
+    void focusView()
+    provider.insertPrompt(`\`\`\`${lang} 文件:${file.replaceAll("\\", "/")}\n${text}\n\`\`\``)
   })
 
   register("opencode.explainSelection", async () => {
@@ -84,7 +89,8 @@ export function activate(context: ExtensionContext) {
     }
     const text = editor.document.getText(sel)
     const lang = editor.document.languageId
-    await panel.insertPrompt(
+    void focusView()
+    provider.insertPrompt(
       `请解释下面这段代码的作用、关键逻辑和潜在问题：\n\n\`\`\`${lang}\n${text}\n\`\`\``,
       true,
     )

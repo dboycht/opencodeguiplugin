@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks"
-import { messages, currentSession, isBusy, todos, pendingPermissions, shareSession, forkSession, summarizeSession, deleteSession } from "./store"
+import { messages, currentSession, isBusy, todos, pendingPermissions, shareSession, forkSession, summarizeSession, deleteSession, toggleSidebar } from "./store"
 import { MessageView } from "./MessageView"
 import { Composer } from "./Composer"
 import { PermissionCard } from "./PermissionCard"
-import { IconShare, IconBranch, IconBook, IconTrash, IconSpinner } from "./icons"
+import { IconShare, IconBranch, IconBook, IconTrash, IconSpinner, IconMenu } from "./icons"
 
 export function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -20,6 +20,9 @@ export function Chat() {
   return (
     <div class="chat">
       <div class="chat-header">
+        <button class="icon-btn chat-menu" onClick={toggleSidebar} title="切换会话列表">
+          <IconMenu size={15} />
+        </button>
         <div class="chat-title">
           <span class="chat-title-text">{session?.title ?? "新会话"}</span>
         </div>

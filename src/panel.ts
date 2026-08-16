@@ -2,13 +2,13 @@ import {
   workspace,
   window,
   Uri,
-  ViewColumn,
   commands,
   WorkspaceEdit,
   Range,
   env,
-  type WebviewPanel,
   type Webview,
+  type WebviewView,
+  type WebviewViewProvider,
   type ExtensionContext,
 } from "vscode"
 import * as fs from "node:fs"
@@ -16,63 +16,35 @@ import * as path from "node:path"
 import type { OpenCodeManager } from "./manager"
 import type { WebviewCall, WebviewMessage, Snapshot, AttachedFile } from "./protocol"
 
-const VIEW_TYPE = "opencode.chat"
+const VIEW_TYPE = "opencode.chatView"
 
-export class ChatPanel {
-  public static current: ChatPanel | undefined
-  public static readonly viewType = VIEW_TYPE
-
-  private panel: WebviewPanel | undefined
-  private disposables: { dispose(): unknown }[] = []
+/**
+ * 单个 Webview 的聊天控制器（面板或侧边栏视图均可复用）。
+ */
+export class ChatHost {
   private currentSessionId: string | null = null
+  private ready = false
+  private pendingMessages: WebviewMessage[] = []
+  private disposables: { dispose(): unknown }[] = []
 
   constructor(
-    private readonly context: ExtensionContext,
     private readonly manager: OpenCodeManager,
-  ) {}
-
-  public reveal() {
-    if (this.panel) {
-      this.panel.reveal(ViewColumn.Beside)
-      return
-    }
-    const panel = window.createWebviewPanel(VIEW_TYPE, "OpenCode 助手", ViewColumn.Beside, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [Uri.joinPath(this.context.extensionUri, "dist")],
-    })
-    this.panel = panel
-    panel.iconPath = Uri.joinPath(this.context.extensionUri, "media", "icon.svg")
-    panel.webview.html = this.getHtml(panel.webview)
-    panel.webview.onDidReceiveMessage((msg: WebviewCall) => void this.onMessage(msg))
-    panel.onDidDispose(() => {
-      this.panel = undefined
-      this.disposables.forEach((d) => d.dispose())
-      this.disposables = []
-      if (ChatPanel.current === this) ChatPanel.current = undefined
-    })
-
+    private readonly webview: Webview,
+  ) {
+    webview.onDidReceiveMessage((msg: WebviewCall) => void this.onMessage(msg))
     this.disposables.push(
       subscribe(this.manager, "event", (ev) => this.post({ type: "event", event: ev })),
       subscribe(this.manager, "state", () => this.pushConnectionState()),
     )
-    ChatPanel.current = this
+  }
+
+  dispose() {
+    this.disposables.forEach((d) => d.dispose())
+    this.disposables = []
   }
 
   private post(msg: WebviewMessage) {
-    this.panel?.webview.postMessage(msg)
-  }
-
-  private getHtml(webview: Webview): string {
-    const distDir = Uri.joinPath(this.context.extensionUri, "dist")
-    const file = Uri.joinPath(distDir, "webview.html")
-    const nonce = getNonce()
-    const html = fs.readFileSync(file.fsPath, "utf8")
-    return html
-      .replaceAll("{{cspSource}}", webview.cspSource)
-      .replaceAll("{{nonce}}", nonce)
-      .replaceAll("{{styleUri}}", webview.asWebviewUri(Uri.joinPath(distDir, "webview.css")).toString())
-      .replaceAll("{{scriptUri}}", webview.asWebviewUri(Uri.joinPath(distDir, "webview.js")).toString())
+    this.webview.postMessage(msg)
   }
 
   private pushConnectionState() {
@@ -101,7 +73,7 @@ export class ChatPanel {
     }
     if (!client || this.manager.state !== "connected") return base
 
-    const [sessions, providers, agents, commands, config] = await Promise.allSettled([
+    const [sessions, providers, agents, commandsList, config] = await Promise.allSettled([
       client.listSessions(),
       client.providers(),
       client.agents(),
@@ -116,7 +88,7 @@ export class ChatPanel {
       base.defaults = providers.value.default ?? {}
     }
     if (agents.status === "fulfilled") base.agents = agents.value ?? []
-    if (commands.status === "fulfilled") base.commands = commands.value ?? []
+    if (commandsList.status === "fulfilled") base.commands = commandsList.value ?? []
     if (config.status === "fulfilled") base.config = config.value ?? {}
 
     if (!this.currentSessionId && base.sessions.length > 0) {
@@ -133,8 +105,10 @@ export class ChatPanel {
 
   private async onMessage(msg: WebviewCall) {
     if (msg.method === "ready") {
+      this.ready = true
       const snapshot = await this.buildSnapshot()
       this.post({ type: "hello", snapshot })
+      this.flushPending()
       return
     }
     if (msg.method === "restartServer") {
@@ -258,15 +232,69 @@ export class ChatPanel {
     }
   }
 
-  public async insertPrompt(text: string, autoSend = false) {
-    this.reveal()
-    this.post({ type: "insertPrompt", text, autoSend })
+  insertPrompt(text: string, autoSend = false) {
+    this.enqueue({ type: "insertPrompt", text, autoSend })
   }
 
-  public async newSessionCommand() {
-    this.reveal()
-    this.post({ type: "command", command: "newSession" })
+  newSession() {
+    this.enqueue({ type: "command", command: "newSession" })
   }
+
+  private enqueue(msg: WebviewMessage) {
+    this.pendingMessages.push(msg)
+    this.flushPending()
+  }
+
+  private flushPending() {
+    if (!this.ready) return
+    for (const msg of this.pendingMessages.splice(0)) this.post(msg)
+  }
+}
+
+/**
+ * 侧边栏（活动栏）Webview 视图。
+ */
+export class ChatViewProvider implements WebviewViewProvider {
+  public static readonly viewType = VIEW_TYPE
+  private host: ChatHost | null = null
+
+  constructor(
+    private readonly context: ExtensionContext,
+    private readonly manager: OpenCodeManager,
+  ) {}
+
+  resolveWebviewView(view: WebviewView): void {
+    view.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [Uri.joinPath(this.context.extensionUri, "dist")],
+    }
+    view.webview.html = getHtml(this.context, view.webview)
+    this.host = new ChatHost(this.manager, view.webview)
+    view.onDidDispose(() => {
+      this.host?.dispose()
+      this.host = null
+    })
+  }
+
+  insertPrompt(text: string, autoSend = false) {
+    this.host?.insertPrompt(text, autoSend)
+  }
+
+  newSession() {
+    this.host?.newSession()
+  }
+}
+
+export function getHtml(context: ExtensionContext, webview: Webview): string {
+  const distDir = Uri.joinPath(context.extensionUri, "dist")
+  const file = Uri.joinPath(distDir, "webview.html")
+  const nonce = getNonce()
+  const html = fs.readFileSync(file.fsPath, "utf8")
+  return html
+    .replaceAll("{{cspSource}}", webview.cspSource)
+    .replaceAll("{{nonce}}", nonce)
+    .replaceAll("{{styleUri}}", webview.asWebviewUri(Uri.joinPath(distDir, "webview.css")).toString())
+    .replaceAll("{{scriptUri}}", webview.asWebviewUri(Uri.joinPath(distDir, "webview.js")).toString())
 }
 
 function getNonce(): string {
@@ -276,7 +304,14 @@ function getNonce(): string {
   return text
 }
 
-function subscribe(emitter: { on: (e: string, l: (...a: any[]) => void) => unknown; off: (e: string, l: (...a: any[]) => void) => unknown }, event: string, listener: (...a: any[]) => void) {
+function subscribe(
+  emitter: {
+    on: (e: string, l: (...a: any[]) => void) => unknown
+    off: (e: string, l: (...a: any[]) => void) => unknown
+  },
+  event: string,
+  listener: (...a: any[]) => void,
+) {
   emitter.on(event, listener)
   return { dispose: () => emitter.off(event, listener) }
 }
