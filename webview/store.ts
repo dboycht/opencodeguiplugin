@@ -117,6 +117,20 @@ export const isBusy = computed<boolean>(() => {
   return id ? busyIds.value.has(id) : false
 })
 
+/** 当前正在运行/待运行的工具名（用于顶部活动栏提示） */
+export const lastActiveTool = computed<string | null>(() => {
+  if (!isBusy.value) return null
+  for (const m of [...messages.value].reverse()) {
+    for (const p of [...m.parts].reverse()) {
+      if (p.type === "tool") {
+        const s = p.state
+        if (s?.status === "running" || s?.status === "pending") return p.tool
+      }
+    }
+  }
+  return null
+})
+
 export const pendingPermissions = computed<Permission[]>(() => {
   const id = currentId.value
   return permissions.value.filter((p) => p.sessionID === id)
@@ -224,10 +238,9 @@ export function handleEvent(raw: OpenCodeEvent) {
     }
     case "message.part.updated": {
       const part = (ev as any).properties?.part as Part | undefined
-      const delta = (ev as any).properties?.delta as string | undefined
       if (!part) return
       if (part.sessionID !== currentId.value) return
-      upsertPart(part, delta)
+      upsertPart(part)
       break
     }
     case "message.part.delta": {
@@ -235,7 +248,7 @@ export function handleEvent(raw: OpenCodeEvent) {
       if (!p) return
       if (p.sessionID !== currentId.value) return
       if (typeof p.delta !== "string" || !p.delta) return
-      appendDelta(p.messageID, p.partID, p.delta)
+      applyDelta(p.sessionID, p.messageID, p.partID, p.field, p.delta)
       break
     }
     case "message.removed": {
@@ -307,54 +320,113 @@ export function handleEvent(raw: OpenCodeEvent) {
   }
 }
 
-function upsertPart(part: Part, delta?: string) {
-  const arr = messages.value.map((m) => ({ info: m.info, parts: [...m.parts] }))
-  let msg = arr.find((m) => m.info.id === part.messageID)
-  if (!msg) {
-    const info = {
-      id: part.messageID,
-      sessionID: part.sessionID,
-      role: "assistant" as const,
-      time: { created: Date.now() },
-      agent: "",
-      model: { providerID: "", modelID: "" },
-      parentID: "",
-      modelID: "",
-      providerID: "",
-      mode: "",
-      path: { cwd: "", root: "" },
-      cost: 0,
-      tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-    }
-    msg = { info, parts: [] }
-    arr.push(msg)
+// ---------- 流式增量（核心） ----------
+
+/** partID -> 该 part 最近一次经 part.updated 设置的完整文本（用于检测重复增量） */
+const fullTexts = new Map<string, string>()
+
+function placeholderInfo(sessionID: string, messageID: string) {
+  return {
+    id: messageID,
+    sessionID,
+    role: "assistant" as const,
+    time: { created: Date.now() },
+    agent: "",
+    model: { providerID: "", modelID: "" },
+    parentID: "",
+    modelID: "",
+    providerID: "",
+    mode: "",
+    path: { cwd: "", root: "" },
+    cost: 0,
+    tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
   }
-  const idx = msg.parts.findIndex((p) => p.id === part.id)
-  if (idx >= 0) {
-    const existing = msg.parts[idx]
-    if ((part.type === "text" || part.type === "reasoning") && delta) {
-      const text = (existing as { text: string }).text + delta
-      msg.parts[idx] = { ...existing, ...part, text } as Part
-    } else {
-      msg.parts[idx] = part
-    }
-  } else {
-    msg.parts.push(part)
-  }
-  messages.value = arr
 }
 
-function appendDelta(messageID: string, partID: string, delta: string) {
-  const arr = messages.value.map((m) => ({ info: m.info, parts: [...m.parts] }))
-  const msg = arr.find((m) => m.info.id === messageID)
-  if (!msg) return
-  const idx = msg.parts.findIndex((p) => p.id === partID)
-  if (idx < 0) return
-  const part = msg.parts[idx]
-  if (part.type === "text" || part.type === "reasoning") {
-    msg.parts[idx] = { ...part, text: part.text + delta } as Part
+/** 仅替换受影响的 message，其余保持引用不变（配合 memo 避免每次增量重渲染整列消息） */
+function patchMessage(
+  messageID: string,
+  sessionID: string,
+  update: (m: MessageWithParts) => MessageWithParts,
+) {
+  const arr = messages.value
+  const idx = arr.findIndex((m) => m.info.id === messageID)
+  if (idx >= 0) {
+    const next = [...arr]
+    next[idx] = update(arr[idx])
+    messages.value = next
+  } else {
+    messages.value = [...arr, update({ info: placeholderInfo(sessionID, messageID), parts: [] })]
   }
-  messages.value = arr
+}
+
+/**
+ * message.part.updated：服务端发送的权威全量 part，直接整体替换。
+ */
+function upsertPart(part: Part) {
+  if ((part.type === "text" || part.type === "reasoning") && typeof (part as any).text === "string") {
+    fullTexts.set(part.id, (part as any).text)
+  }
+  patchMessage(part.messageID, part.sessionID, (m) => {
+    const parts = [...m.parts]
+    const idx = parts.findIndex((p) => p.id === part.id)
+    if (idx >= 0) parts[idx] = part
+    else parts.push(part)
+    return { info: m.info, parts }
+  })
+}
+
+/** 取 part 对应 field 的当前字符串值（text/reasoning → .text；tool → .state.output） */
+function partFieldText(part: Part, field: string): string {
+  if (part.type === "tool") return ((part.state as any)?.output ?? "") as string
+  return ((part as any).text ?? "") as string
+}
+
+/**
+ * message.part.delta：增量追加。若 part/message 尚不存在则先创建占位，避免增量丢失。
+ * 防御重复追加：若该 part 刚被全量 part.updated 覆盖、且当前值已以 delta 结尾，说明该增量已被包含，跳过。
+ */
+function applyDelta(sessionID: string, messageID: string, partID: string, field: string, delta: string) {
+  patchMessage(messageID, sessionID, (m) => {
+    const parts = [...m.parts]
+    const idx = parts.findIndex((p) => p.id === partID)
+    if (idx < 0) {
+      // 未知 part：按字段类型创建占位，避免增量丢失
+      if (field === "output") {
+        parts.push({
+          id: partID,
+          sessionID,
+          messageID,
+          type: "tool",
+          tool: "bash",
+          callID: "",
+          state: { status: "running", input: {}, time: { start: Date.now() }, output: delta },
+        } as unknown as Part)
+      } else {
+        parts.push({
+          id: partID,
+          sessionID,
+          messageID,
+          type: "text",
+          text: delta,
+        } as unknown as Part)
+      }
+      return { info: m.info, parts }
+    }
+    const p = parts[idx]
+    const cur = partFieldText(p, field)
+    const known = fullTexts.get(partID)
+    if (known !== undefined && known === cur && cur.endsWith(delta)) {
+      return m // 全量 part.updated 已包含该增量，跳过防重复
+    }
+    if (p.type === "tool") {
+      const st = (p.state as any) ?? {}
+      parts[idx] = { ...p, state: { ...st, output: cur + delta } } as Part
+    } else {
+      parts[idx] = { ...p, text: cur + delta } as Part
+    }
+    return { info: m.info, parts }
+  })
 }
 
 // ---------- 数据操作 ----------

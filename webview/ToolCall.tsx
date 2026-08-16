@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks"
+import { useEffect, useRef, useState } from "preact/hooks"
 import type { ToolPart } from "../src/types"
 import { IconTerminal, IconFile, IconSearch, IconRobot, IconCheck, IconWarn, IconSpinner, IconChevron } from "./icons"
 import { escapeHtml } from "./markdown"
@@ -34,14 +34,44 @@ function summarize(input: Record<string, unknown>, tool: string): string {
   return ""
 }
 
+function fmtTime(sec: number): string {
+  if (sec < 60) return `${sec}s`
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}m ${s.toString().padStart(2, "0")}s`
+}
+
 export function ToolCall({ part }: { part: ToolPart }) {
-  const [open, setOpen] = useState(false)
   const s = part.state
+  const [open, setOpen] = useState(s.status === "running" || s.status === "pending")
+  const [now, setNow] = useState(() => Date.now())
+  const prevStatus = useRef<string | null>(null)
+
+  // 运行中 / 刚完成时自动展开，让用户看到正在执行什么
+  useEffect(() => {
+    const prev = prevStatus.current
+    prevStatus.current = s.status
+    if (prev !== null && prev !== s.status && (s.status === "running" || s.status === "completed")) {
+      setOpen(true)
+    }
+  }, [s.status])
+
+  // 运行中计时
+  useEffect(() => {
+    if (s.status !== "running") return
+    setNow(Date.now())
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [s.status])
+
   const Icon = toolIcon(part.tool)
-  const summary = summarize(s.input ?? {}, part.tool)
+  const summary = summarize((s.input ?? {}) as Record<string, unknown>, part.tool)
   const title = "title" in s ? (s as any).title : part.tool
   const output = "output" in s ? (s as any).output : ""
   const error = "error" in s ? (s as any).error : ""
+  const running = s.status === "running" || s.status === "pending"
+  const elapsed =
+    running && (s as any).time?.start ? fmtTime(Math.max(0, Math.floor((now - (s as any).time.start) / 1000))) : ""
 
   const statusIcon =
     s.status === "completed" ? (
@@ -54,15 +84,22 @@ export function ToolCall({ part }: { part: ToolPart }) {
 
   return (
     <div class={`tool-call tool-${s.status}`}>
-      <button class="tool-head" onClick={() => setOpen((v) => !v)}>
+      <button class="tool-head" onClick={() => setOpen((v) => !v)} title={open ? "收起输出" : "展开输出"}>
         <span class="tool-ic"><Icon size={14} /></span>
-        <span class="tool-name">{title}</span>
-        {summary && <span class="tool-summary">{summary}</span>}
+        <span class="tool-name">{title || part.tool}</span>
+        {summary && summary !== title && <span class="tool-summary">{summary}</span>}
+        {running && elapsed && <span class="tool-elapsed">{elapsed}</span>}
         {statusIcon}
         <span class="tool-chev"><IconChevron size={13} class={open ? "open" : ""} /></span>
       </button>
       {open && (
         <div class="tool-body">
+          {summary && (
+            <div class="tool-input">
+              <span class="tool-input-label">输入</span>
+              <code>{summary}</code>
+            </div>
+          )}
           {error && <pre class="tool-error">{error}</pre>}
           {output && (
             <pre
@@ -70,6 +107,7 @@ export function ToolCall({ part }: { part: ToolPart }) {
               dangerouslySetInnerHTML={{ __html: escapeHtml(output) }}
             />
           )}
+          {running && !output && <div class="tool-running-hint">执行中，等待输出…</div>}
         </div>
       )}
     </div>

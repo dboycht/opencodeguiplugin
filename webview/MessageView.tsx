@@ -1,14 +1,19 @@
+import { memo } from "preact/compat"
 import { useState } from "preact/hooks"
 import type { MessageWithParts, Part, Message } from "../src/types"
 import { renderMarkdown } from "./markdown"
 import { ToolCall } from "./ToolCall"
 import { IconUser, IconRobot, IconCopy, IconBack, IconCheck } from "./icons"
 import { call } from "./api"
+import { isBusy } from "./store"
 
 function modelLabel(m: Message): string {
   if (m.role === "assistant") return `${m.providerID}/${m.modelID}`
   return `${m.model.providerID}/${m.model.modelID}`
 }
+
+/** 流式光标占位标记（渲染后替换为 <span class="stream-cursor">） */
+const CURSOR_MARKER = "__OC_CURSOR__"
 
 function formatTokens(m: MessageWithParts): string {
   const t = (m.info as any).tokens
@@ -23,9 +28,11 @@ function formatTokens(m: MessageWithParts): string {
   return `tokens: ${bits.join(" / ")}${costStr}`
 }
 
-export function MessageView({ message, last }: { message: MessageWithParts; last?: boolean }) {
+function MessageViewInner({ message, last }: { message: MessageWithParts; last?: boolean }) {
   const isUser = message.info.role === "user"
   const [copied, setCopied] = useState(false)
+  // 仅当这是最后一条且会话仍在生成时，显示流式光标
+  const streaming = !isUser && last === true && isBusy.value
 
   const textParts = message.parts.filter((p) => p.type === "text") as Array<Extract<Part, { type: "text" }>>
   const reasoning = message.parts.filter((p) => p.type === "reasoning")
@@ -57,7 +64,10 @@ export function MessageView({ message, last }: { message: MessageWithParts; last
           {isUser ? (
             <span class="msg-role">你</span>
           ) : (
-            <span class="msg-role">{modelLabel(message.info)}</span>
+            <>
+              <span class="msg-role">{modelLabel(message.info)}</span>
+              {streaming && <span class="msg-streaming">正在生成…</span>}
+            </>
           )}
         </div>
 
@@ -71,13 +81,19 @@ export function MessageView({ message, last }: { message: MessageWithParts; last
           <Reasoning parts={reasoning} />
         )}
 
-        {textParts.map((p) => (
-          <div
-            key={p.id}
-            class="md"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(p.text) }}
-          />
-        ))}
+        {textParts.map((p, i) => {
+          // 流式光标：追加标记到最后一个文本 part，渲染后替换为可样式化元素
+          const isStreamingLast = streaming && i === textParts.length - 1
+          let html = renderMarkdown(p.text + (isStreamingLast ? CURSOR_MARKER : ""))
+          if (isStreamingLast) html = html.replaceAll(CURSOR_MARKER, '<span class="stream-cursor"></span>')
+          return (
+            <div
+              key={p.id}
+              class="md"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          )
+        })}
 
         {files.map((f) => (
           <div key={f.id} class="msg-file">
@@ -107,6 +123,8 @@ export function MessageView({ message, last }: { message: MessageWithParts; last
     </div>
   )
 }
+
+export const MessageView = memo(MessageViewInner)
 
 function Reasoning({ parts }: { parts: Part[] }) {
   const [open, setOpen] = useState(false)
