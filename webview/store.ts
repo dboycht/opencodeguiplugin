@@ -1,4 +1,4 @@
-import { signal, computed, batch } from "@preact/signals"
+import { signal, computed, batch, effect } from "@preact/signals"
 import type {
   Agent,
   Command,
@@ -65,6 +65,21 @@ export const APPROVAL_MODES: { id: ApprovalMode; label: string; desc: string }[]
   { id: "plan", label: "计划模式", desc: "只读，拒绝编辑和命令执行" },
 ]
 
+// 是否已加载快照（用于避免在恢复前持久化默认值）
+export const loaded = signal(false)
+
+// 持久化用户偏好：模型 / 智能体 / 审批模式 / 当前会话
+effect(() => {
+  if (!loaded.value) return
+  const m = model.value
+  void call("savePrefs", {
+    sessionId: currentId.value,
+    model: m ? { providerID: m.providerID, modelID: m.modelID } : null,
+    agent: agent.value,
+    approvalMode: approvalMode.value,
+  })
+})
+
 // 草稿与附件（按会话）
 export const drafts = signal<Record<string, string>>({})
 export const attachments = signal<Record<string, PromptPart[]>>({})
@@ -116,7 +131,10 @@ export function loadSnapshot(s: Snapshot) {
     commands.value = s.commands
     config.value = s.config
 
-    if (!model.value) {
+    const prefs = s.prefs ?? {}
+    if (prefs.model) {
+      model.value = { providerID: prefs.model.providerID, modelID: prefs.model.modelID }
+    } else if (!model.value) {
       let m: string | undefined = s.config.model
       if (!m) {
         const providerID = Object.keys(s.defaults)[0]
@@ -128,7 +146,16 @@ export function loadSnapshot(s: Snapshot) {
         if (providerID && modelID) model.value = { providerID, modelID }
       }
     }
+    if (prefs.agent !== undefined) agent.value = prefs.agent
+    if (prefs.approvalMode) approvalMode.value = prefs.approvalMode as ApprovalMode
+
+    loaded.value = true
   })
+
+  // 没有会话时自动创建一个
+  if (s.sessions.length === 0 && !currentId.value) {
+    void createSession()
+  }
 }
 
 export function setConnected(v: string) {
@@ -280,7 +307,7 @@ function upsertPart(part: Part, delta?: string) {
   const idx = msg.parts.findIndex((p) => p.id === part.id)
   if (idx >= 0) {
     const existing = msg.parts[idx]
-    if (part.type === "text" && delta) {
+    if ((part.type === "text" || part.type === "reasoning") && delta) {
       const text = (existing as { text: string }).text + delta
       msg.parts[idx] = { ...existing, ...part, text } as Part
     } else {

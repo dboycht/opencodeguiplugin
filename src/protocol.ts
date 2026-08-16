@@ -49,8 +49,16 @@ export type WebviewCall =
   | { id: string; method: "revertMessage"; params: { sessionId: string; messageId: string } }
   | { id: string; method: "copyToClipboard"; params: { text: string } }
   | { id: string; method: "restartServer"; params?: undefined }
+  | { id: string; method: "savePrefs"; params: UserPrefs }
 
 // ---------- Extension -> Webview ----------
+
+export interface UserPrefs {
+  sessionId?: string | null
+  model?: { providerID: string; modelID: string } | null
+  agent?: string | null
+  approvalMode?: string
+}
 
 export interface Snapshot {
   connected: boolean
@@ -65,6 +73,7 @@ export interface Snapshot {
   commands: Command[]
   config: Config
   statuses: Record<string, string>
+  prefs: UserPrefs
 }
 
 export type WebviewMessage =

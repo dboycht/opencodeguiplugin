@@ -14,7 +14,7 @@ import {
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { OpenCodeManager } from "./manager"
-import type { WebviewCall, WebviewMessage, Snapshot, AttachedFile } from "./protocol"
+import type { WebviewCall, WebviewMessage, Snapshot, AttachedFile, UserPrefs } from "./protocol"
 
 const VIEW_TYPE = "opencode.chatView"
 
@@ -28,6 +28,7 @@ export class ChatHost {
   private disposables: { dispose(): unknown }[] = []
 
   constructor(
+    private readonly context: ExtensionContext,
     private readonly manager: OpenCodeManager,
     private readonly webview: Webview,
   ) {
@@ -70,6 +71,7 @@ export class ChatHost {
       commands: [],
       config: {},
       statuses: {},
+      prefs: this.readPrefs(),
     }
     if (!client || this.manager.state !== "connected") return base
 
@@ -91,8 +93,13 @@ export class ChatHost {
     if (commandsList.status === "fulfilled") base.commands = commandsList.value ?? []
     if (config.status === "fulfilled") base.config = config.value ?? {}
 
-    if (!this.currentSessionId && base.sessions.length > 0) {
-      this.currentSessionId = base.sessions[0].id
+    if (!this.currentSessionId) {
+      const prefs = base.prefs
+      if (prefs.sessionId && base.sessions.some((s) => s.id === prefs.sessionId)) {
+        this.currentSessionId = prefs.sessionId
+      } else if (base.sessions.length > 0) {
+        this.currentSessionId = base.sessions[0].id
+      }
     }
     base.currentSessionId = this.currentSessionId
 
@@ -101,6 +108,14 @@ export class ChatHost {
       base.messages = messages ?? []
     }
     return base
+  }
+
+  private readPrefs(): UserPrefs {
+    try {
+      return this.context.globalState.get<UserPrefs>("opencode.prefs", {})
+    } catch {
+      return {}
+    }
   }
 
   private async onMessage(msg: WebviewCall) {
@@ -235,6 +250,12 @@ export class ChatHost {
         return client.revertSession(msg.params.sessionId, { messageID: msg.params.messageId })
       case "copyToClipboard":
         return env.clipboard.writeText(msg.params.text)
+      case "savePrefs": {
+        const existing = this.readPrefs()
+        const merged: UserPrefs = { ...existing, ...msg.params }
+        await this.context.globalState.update("opencode.prefs", merged)
+        return true
+      }
       default:
         return undefined
     }
@@ -277,7 +298,7 @@ export class ChatViewProvider implements WebviewViewProvider {
       localResourceRoots: [Uri.joinPath(this.context.extensionUri, "dist")],
     }
     view.webview.html = getHtml(this.context, view.webview)
-    this.host = new ChatHost(this.manager, view.webview)
+    this.host = new ChatHost(this.context, this.manager, view.webview)
     view.onDidDispose(() => {
       this.host?.dispose()
       this.host = null

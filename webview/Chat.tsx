@@ -18,7 +18,8 @@ import { call } from "./api"
 import { MessageView } from "./MessageView"
 import { Composer } from "./Composer"
 import { PermissionCard } from "./PermissionCard"
-import { IconShare, IconBranch, IconBook, IconTrash, IconSpinner, IconMenu, IconWarn } from "./icons"
+import { StreamStatus } from "./StreamStatus"
+import { IconShare, IconBranch, IconBook, IconTrash, IconMenu, IconWarn } from "./icons"
 
 const EXAMPLES = [
   "帮我看看这个项目的整体结构，并说明它是做什么的",
@@ -116,12 +117,7 @@ export function Chat() {
         {list.map((m, i) => (
           <MessageView key={m.info.id} message={m} last={i === list.length - 1} />
         ))}
-        {busy && (
-          <div class="busy-indicator">
-            <IconSpinner size={14} class="spin" />
-            <span>OpenCode 正在思考…</span>
-          </div>
-        )}
+        {busy && <StreamStatus />}
       </div>
 
       {pendingPermissions.value.map((p) => (

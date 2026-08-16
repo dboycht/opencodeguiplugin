@@ -5,6 +5,7 @@ import { call } from "./api"
 import { ModelPicker } from "./ModelPicker"
 import { AgentPicker } from "./AgentPicker"
 import { ApprovalModePicker } from "./ApprovalModePicker"
+import { CommandPicker } from "./CommandPicker"
 import { IconSend, IconStop, IconFile, IconClose, IconCommand } from "./icons"
 import type { PromptPart } from "../src/types"
 
@@ -139,7 +140,7 @@ export function Composer() {
           onKeyDown={onKeyDown}
         />
         <div class="composer-toolbar">
-          <div class="composer-left">
+          <div class="composer-pickers">
             <button class="btn btn-ghost btn-sm" onClick={attachFiles} title="添加本地文件作为对话上下文">
               <IconFile size={14} />
               <span>附件</span>
@@ -147,8 +148,10 @@ export function Composer() {
             <ModelPicker />
             <AgentPicker />
             <ApprovalModePicker />
+            <CommandPicker />
           </div>
-          <div class="composer-right">
+          <div class="composer-actions">
+            <span class="composer-hint">Enter 发送 · Shift+Enter 换行 · / 命令</span>
             {busy ? (
               <button class="btn btn-stop" onClick={() => void abortSession()} title="中断当前生成">
                 <IconStop size={14} />

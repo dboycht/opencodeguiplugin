@@ -786,20 +786,31 @@ textarea {
 
 .composer-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-top: 8px;
 }
 
-.composer-left {
+.composer-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.composer-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
-.composer-right {
-  display: flex;
-  align-items: center;
+.composer-hint {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 /* ---------- 按钮 ---------- */
@@ -919,6 +930,7 @@ textarea {
   left: 0;
   z-index: 100;
   width: 320px;
+  max-width: min(340px, calc(100vw - 24px));
   max-height: 360px;
   background: var(--input-bg);
   border: 1px solid var(--panel-border);
@@ -1207,6 +1219,7 @@ textarea {
   gap: 1px;
   overflow: visible;
   white-space: normal;
+  line-height: 1.35;
 }
 
 .approval-label {
@@ -1264,6 +1277,84 @@ textarea {
   padding: 10px 12px;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* ---------- 命令选择器 ---------- */
+.command-menu {
+  width: 300px;
+}
+
+.command-name {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family, Consolas, monospace);
+  color: var(--link);
+  font-size: 12px;
+}
+
+.command-desc {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+.picker-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- 流式状态 ---------- */
+.stream-status {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0 16px;
+  background: var(--panel-bg);
+}
+
+.stream-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.stream-label {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.stream-time {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.stream-tokens {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stream-reasoning {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--panel-border);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.stream-reasoning-label {
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--muted);
+}
+
+.stream-reasoning-text {
+  word-break: break-word;
 }
 
 /* ---------- 小按钮 ---------- */
@@ -1421,4 +1512,11 @@ body.vscode-high-contrast .hljs-built_in,
 body.vscode-high-contrast .hljs-type,
 body.vscode-high-contrast .hljs-class {
   color: #ffa657;
+}
+
+/* ---------- խ������ ---------- */
+@media (max-width: 520px) {
+  .composer-hint {
+    display: none;
+  }
 }
