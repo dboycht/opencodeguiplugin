@@ -66,9 +66,16 @@ export function ActivityBar() {
       {reasoningPreview && (
         <div class="activity-reasoning">
           <span class="activity-reasoning-label">思考中</span>
-          <span class="activity-reasoning-text">{reasoningPreview.slice(0, 240)}</span>
+          <span class="activity-reasoning-text">{tailPreview(reasoningPreview, 240)}</span>
         </div>
       )}
     </div>
   )
+}
+
+/** 滑动窗口：始终展示最新的一段思考内容，像打字机一样跟随流式 */
+function tailPreview(text: string, max: number): string {
+  const clean = text.trim()
+  if (clean.length <= max) return clean
+  return `…${clean.slice(-max)}`
 }

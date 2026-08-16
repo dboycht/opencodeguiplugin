@@ -2,6 +2,7 @@ import type {
   Agent,
   Command,
   Config,
+  FileDiff,
   MessageWithParts,
   OpenCodeEvent,
   PromptPart,
@@ -194,6 +195,10 @@ export class OpenCodeClient {
     return this.request<Todo[]>(`/session/${encodeURIComponent(id)}/todo`)
   }
 
+  getDiff(id: string): Promise<FileDiff[]> {
+    return this.request<FileDiff[]>(`/session/${encodeURIComponent(id)}/diff`)
+  }
+
   respondPermission(
     id: string,
     permissionID: string,
@@ -234,10 +239,11 @@ export class OpenCodeClient {
   /**
    * 订阅服务端事件流（SSE）。返回一个取消函数。
    * 事件兼容两种格式：`{ type, properties }` 或 `{ payload: { type, properties } }`。
+   * 注意：/event 流按项目目录隔离，必须带上 directory 参数才能收到对应项目的事件。
    */
   subscribe(onEvent: (ev: OpenCodeEvent) => void, onError?: (err: Error) => void): () => void {
     const controller = new AbortController()
-    const url = `${this.baseUrl}/event`
+    const url = `${this.baseUrl}/event${this.directory ? this.qs({ directory: this.directory }) : ""}`
     void (async () => {
       try {
         const res = await fetch(url, {

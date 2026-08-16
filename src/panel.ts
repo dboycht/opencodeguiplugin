@@ -2,6 +2,7 @@ import {
   workspace,
   window,
   Uri,
+  ViewColumn,
   commands,
   WorkspaceEdit,
   Range,
@@ -223,6 +224,8 @@ export class ChatHost {
         return client.config()
       case "getTodos":
         return client.getTodos(msg.params.sessionId)
+      case "getDiff":
+        return client.getDiff(msg.params.sessionId)
       case "pickFiles": {
         const files = await window.showOpenDialog({ canSelectMany: true, openLabel: "添加到对话" })
         if (!files) return []
@@ -250,6 +253,7 @@ export class ChatHost {
           beforeDoc.uri,
           afterDoc.uri,
           `${path.basename(msg.params.path)}：变更对比`,
+          { viewColumn: ViewColumn.Beside, preview: true },
         )
         return true
       }

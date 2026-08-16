@@ -3,6 +3,7 @@ import type {
   Agent,
   Command,
   Config,
+  FileDiff,
   MessageWithParts,
   OpenCodeEvent,
   Part,
@@ -284,7 +285,13 @@ export function handleEvent(raw: OpenCodeEvent) {
       const set = new Set(busyIds.value)
       set.delete(sessionID)
       busyIds.value = set
-      if (sessionID === currentId.value) void refreshMessages()
+      if (sessionID === currentId.value) {
+        void refreshMessages()
+        // 计划模式：完成后自动打开文件差异预览，询问用户
+        if (approvalMode.value === "plan") {
+          void showPlanPreview()
+        }
+      }
       refreshSessionsMeta()
       break
     }
@@ -675,6 +682,27 @@ export async function revertMessage(messageId: string) {
     await refreshMessages()
   } catch (err) {
     toast((err as Error).message, "error", "回退消息失败")
+  }
+}
+
+/** 计划模式完成后：拉取会话差异，在编辑器右侧打开文件预览询问用户 */
+export async function showPlanPreview() {
+  const id = currentId.value
+  if (!id) return
+  try {
+    const diffs = (await call<FileDiff[]>("getDiff", { sessionId: id })) ?? []
+    const changed = diffs.filter((d) => d.before !== d.after)
+    if (changed.length === 0) {
+      toast("计划已完成，暂无文件变更", "info", "计划")
+      return
+    }
+    const shown = changed.slice(0, 5)
+    for (const d of shown) {
+      await call("showDiff", { path: d.file, before: d.before, after: d.after })
+    }
+    toast(`已在编辑器中打开 ${shown.length} 个文件的差异预览，请审阅`, "info", "计划预览")
+  } catch {
+    /* 忽略 */
   }
 }
 
