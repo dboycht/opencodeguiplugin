@@ -2,7 +2,7 @@
   "name": "opencode-gui-plugin",
   "displayName": "OpenCode 助手 (GUI)",
   "description": "OpenCode 的 VS Code 图形界面插件：中文对话、会话管理、模型切换、工具调用可视化，无需终端。",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "dboycht",
   "license": "MIT",
   "icon": "media/icon.png",

@@ -232,6 +232,8 @@ export class ChatHost {
         return client.getTodos(msg.params.sessionId)
       case "getDiff":
         return client.getDiff(msg.params.sessionId)
+      case "findFiles":
+        return client.findFiles(msg.params.query)
       case "pickFiles": {
         const files = await window.showOpenDialog({ canSelectMany: true, openLabel: "添加到对话" })
         if (!files) return []

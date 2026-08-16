@@ -19,6 +19,7 @@ import { t } from "./i18n"
 import { MessageView } from "./MessageView"
 import { Composer } from "./Composer"
 import { PermissionCard } from "./PermissionCard"
+import { PlanReview } from "./PlanReview"
 import { ActivityBar } from "./ActivityBar"
 import { IconShare, IconBranch, IconBook, IconTrash, IconMenu, IconWarn } from "./icons"
 
@@ -138,6 +139,8 @@ export function Chat() {
       {pendingPermissions.value.map((p) => (
         <PermissionCard key={p.id} permission={p} />
       ))}
+
+      <PlanReview />
 
       <Composer />
     </div>

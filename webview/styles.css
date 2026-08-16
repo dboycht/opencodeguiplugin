@@ -1306,6 +1306,126 @@ textarea {
   overflow-y: auto;
 }
 
+/* ---------- @ 引用文件 ---------- */
+.at-popup {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  box-shadow: var(--vscode-widget-shadow, 0 4px 16px rgba(0, 0, 0, 0.2));
+  margin-bottom: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.at-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.at-item:hover,
+.at-item.selected {
+  background: var(--list-hover);
+}
+
+.at-name {
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.at-path {
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: right;
+}
+
+/* ---------- Plan 审批 ---------- */
+.plan-review {
+  margin: 0 16px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  overflow: hidden;
+}
+
+.plan-review-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.plan-review-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.plan-review-count {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.plan-review-spacer {
+  flex: 1;
+}
+
+.plan-review-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.plan-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.plan-file:hover {
+  background: var(--list-hover);
+}
+
+.plan-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.plan-file-stats {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-file-stats .add {
+  color: var(--ok);
+}
+
+.plan-file-stats .del {
+  color: var(--danger);
+}
+
+.plan-file-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .slash-item {
   display: flex;
   align-items: center;

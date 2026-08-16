@@ -43,6 +43,7 @@ export type WebviewCall =
   | { id: string; method: "getConfig"; params?: undefined }
   | { id: string; method: "getTodos"; params: { sessionId: string } }
   | { id: string; method: "getDiff"; params: { sessionId: string } }
+  | { id: string; method: "findFiles"; params: { query: string } }
   | { id: string; method: "pickFiles"; params?: undefined }
   | { id: string; method: "openFile"; params: { path: string } }
   | { id: string; method: "applyToEditor"; params: { path: string; content: string } }

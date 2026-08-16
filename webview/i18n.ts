@@ -126,6 +126,19 @@ const zh: Dict = {
   // 上下文
   "context.title": "上下文占用：{used} / {limit} tokens（{pct}%）",
   "context.none": "暂无上下文统计",
+
+  // 输入提示
+  "composer.atHint": "输入 @ 引用文件",
+  "composer.atEmpty": "未找到匹配文件",
+
+  // Plan 审批
+  "plan.title": "计划审批",
+  "plan.files": "个文件",
+  "plan.viewDiff": "查看差异",
+  "plan.apply": "应用",
+  "plan.reject": "拒绝",
+  "plan.close": "关闭",
+  "plan.noChanges": "计划已完成，暂无文件变更",
 }
 
 const en: Dict = {
@@ -237,6 +250,17 @@ const en: Dict = {
 
   "context.title": "Context used: {used} / {limit} tokens ({pct}%)",
   "context.none": "No context stats yet",
+
+  "composer.atHint": "Type @ to reference a file",
+  "composer.atEmpty": "No matching file",
+
+  "plan.title": "Plan Review",
+  "plan.files": "files",
+  "plan.viewDiff": "View diff",
+  "plan.apply": "Apply",
+  "plan.reject": "Reject",
+  "plan.close": "Close",
+  "plan.noChanges": "Plan done, no file changes",
 }
 
 export function t(key: string): string {

@@ -236,6 +236,11 @@ export class OpenCodeClient {
     )
   }
 
+  /** 按名称模糊搜索工作区文件（@ 引用用） */
+  findFiles(query: string, limit = 20): Promise<string[]> {
+    return this.request<string[]>(`/find/file${this.qs({ query, limit: String(limit) })}`)
+  }
+
   /**
    * 订阅服务端事件流（SSE）。返回一个取消函数。
    * 事件兼容两种格式：`{ type, properties }` 或 `{ payload: { type, properties } }`。

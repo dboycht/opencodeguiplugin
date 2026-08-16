@@ -174,6 +174,44 @@ export const sessionUsage = computed(() => {
 /** 本轮对话的耗时指标（发送时间 / 首 token 到达时间），用于展示首 token 延迟与总耗时 */
 export const roundMetrics = signal<{ sentAt: number; firstTokenAt: number | null } | null>(null)
 
+/** 输入历史（已发送的 prompt，↑/↓ 切换） */
+export const history = signal<string[]>([])
+
+export function addHistory(text: string) {
+  const h = history.value
+  if (h[h.length - 1] === text) return
+  history.value = [...h.slice(-99), text]
+}
+
+/** Plan 审批：待审阅的文件差异 */
+export const planDiffs = signal<FileDiff[]>([])
+
+export function closePlanPreview() {
+  planDiffs.value = []
+}
+
+export async function applyPlanFile(file: string, after: string) {
+  try {
+    await call("applyToEditor", { path: file, content: after })
+    planDiffs.value = planDiffs.value.filter((d) => d.file !== file)
+    toast(`${file} 已应用`, "success")
+  } catch (err) {
+    toast((err as Error).message, "error", "应用失败")
+  }
+}
+
+export async function rejectPlanFile(file: string) {
+  planDiffs.value = planDiffs.value.filter((d) => d.file !== file)
+}
+
+export async function searchFiles(query: string): Promise<string[]> {
+  try {
+    return (await call<string[]>("findFiles", { query })) ?? []
+  } catch {
+    return []
+  }
+}
+
 // ---------- Toast ----------
 let toastSeq = 0
 export function toast(message: string, variant: Toast["variant"] = "info", title?: string) {
@@ -658,6 +696,7 @@ export async function sendPrompt(text: string): Promise<boolean> {
   set.add(id)
   busyIds.value = set
   roundMetrics.value = { sentAt: Date.now(), firstTokenAt: null }
+  addHistory(text)
 
   try {
     await call("sendPrompt", { sessionId: id, body })
@@ -729,22 +768,17 @@ export async function revertMessage(messageId: string) {
   }
 }
 
-/** 计划模式完成后：拉取会话差异，在编辑器右侧打开文件预览询问用户 */
+/** 计划模式完成后：拉取会话差异，弹出审批面板供用户逐文件应用/拒绝 */
 export async function showPlanPreview() {
   const id = currentId.value
   if (!id) return
   try {
     const diffs = (await call<FileDiff[]>("getDiff", { sessionId: id })) ?? []
     const changed = diffs.filter((d) => d.before !== d.after)
+    planDiffs.value = changed
     if (changed.length === 0) {
       toast("计划已完成，暂无文件变更", "info", "计划")
-      return
     }
-    const shown = changed.slice(0, 5)
-    for (const d of shown) {
-      await call("showDiff", { path: d.file, before: d.before, after: d.after })
-    }
-    toast(`已在编辑器中打开 ${shown.length} 个文件的差异预览，请审阅`, "info", "计划预览")
   } catch {
     /* 忽略 */
   }
