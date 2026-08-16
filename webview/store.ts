@@ -137,6 +137,33 @@ export const pendingPermissions = computed<Permission[]>(() => {
   return permissions.value.filter((p) => p.sessionID === id)
 })
 
+/** 当前会话的使用统计（token / 成本 / 消息数），供「使用记录」展示 */
+export const sessionUsage = computed(() => {
+  let input = 0
+  let output = 0
+  let reasoning = 0
+  let cost = 0
+  let assistantMessages = 0
+  let userMessages = 0
+  let toolCalls = 0
+  for (const m of messages.value) {
+    if (m.info.role === "assistant") {
+      assistantMessages++
+      const t = (m.info as any).tokens
+      if (t) {
+        input += t.input ?? 0
+        output += t.output ?? 0
+        reasoning += t.reasoning ?? 0
+      }
+      cost += (m.info as any).cost ?? 0
+      toolCalls += m.parts.filter((p) => p.type === "tool").length
+    } else {
+      userMessages++
+    }
+  }
+  return { input, output, reasoning, cost, assistantMessages, userMessages, toolCalls }
+})
+
 // ---------- Toast ----------
 let toastSeq = 0
 export function toast(message: string, variant: Toast["variant"] = "info", title?: string) {

@@ -459,6 +459,16 @@ textarea {
   color: var(--muted);
 }
 
+/* 连续的 AI 消息合并为同一回合：只显示第一个头像，后续消息紧凑缩进对齐 */
+.msg-assistant + .msg-assistant {
+  margin-top: -12px;
+}
+
+.msg-assistant + .msg-assistant .msg-avatar,
+.msg-assistant + .msg-assistant .msg-meta {
+  visibility: hidden;
+}
+
 .msg-error {
   padding: 8px 12px;
   border: 1px solid var(--danger);
@@ -1635,11 +1645,25 @@ body.vscode-high-contrast .hljs-class {
 }
 
 /* ---------- 上下文占用环 ---------- */
+.context-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
 .context-ring {
   position: relative;
   width: 34px;
   height: 34px;
   flex-shrink: 0;
+}
+
+.context-ring-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .context-ring svg {

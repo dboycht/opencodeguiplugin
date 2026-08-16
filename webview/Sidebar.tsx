@@ -2,6 +2,8 @@ import { useState } from "preact/hooks"
 import {
   filteredSessions,
   currentId,
+  currentSession,
+  sessionUsage,
   selectSession,
   createSession,
   deleteSession,
@@ -46,6 +48,12 @@ function timeAgo(ts: number): string {
   const d = Math.floor(h / 24)
   if (d < 30) return `${d} 天前`
   return new Date(ts).toLocaleDateString()
+}
+
+function fmtTokens(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(Math.round(n))
 }
 
 export function Sidebar() {
@@ -192,6 +200,7 @@ function SettingsPanel() {
   const [cmdPath, setCmdPath] = useState(server.value.commandPath)
   const [port, setPort] = useState(String(server.value.port))
   const modelCount = providers.value.reduce((n, p) => n + Object.keys(p.models).length, 0)
+  const usage = sessionUsage.value
 
   const restart = async () => {
     try {
@@ -251,6 +260,19 @@ function SettingsPanel() {
           {modelCount} 个（{providers.value.length} 提供商）
         </Row>
         <Row label="代理">{agents.value.map((a) => a.name).join("、") || "—"}</Row>
+      </section>
+
+      <section class="settings-section">
+        <h3>使用记录</h3>
+        <Row label="会话">{currentSession.value?.title || "—"}</Row>
+        <Row label="消息数">
+          AI {usage.assistantMessages} · 你 {usage.userMessages}
+        </Row>
+        <Row label="工具调用">{usage.toolCalls} 次</Row>
+        <Row label="Token 用量">
+          {fmtTokens(usage.input)} 输入 / {fmtTokens(usage.output)} 输出 / {fmtTokens(usage.reasoning)} 思考
+        </Row>
+        <Row label="成本">${usage.cost.toFixed(4)}</Row>
       </section>
 
       <section class="settings-section settings-tip">
