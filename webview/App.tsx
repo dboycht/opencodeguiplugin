@@ -3,7 +3,6 @@ import { onMessage, sendReady } from "./api"
 import * as store from "./store"
 import { Sidebar } from "./Sidebar"
 import { Chat } from "./Chat"
-import { SettingsView } from "./SettingsView"
 import { Toasts } from "./Toasts"
 import { call } from "./api"
 
@@ -46,12 +45,17 @@ export function App() {
         setTimeout(() => (target.textContent = "复制"), 1500)
       })
     }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") store.closeSidebar()
+    }
     document.addEventListener("click", onClick)
+    document.addEventListener("keydown", onKey)
 
     sendReady()
     return () => {
       off()
       document.removeEventListener("click", onClick)
+      document.removeEventListener("keydown", onKey)
     }
   }, [])
 
@@ -70,8 +74,11 @@ export function App() {
 
   return (
     <div class="app">
-      {store.sidebarOpen.value && <Sidebar />}
-      <div class="main">{store.view.value === "chat" ? <Chat /> : <SettingsView />}</div>
+      <div class="main">
+        <Chat />
+      </div>
+      {store.sidebarOpen.value && <div class="drawer-backdrop" onClick={store.closeSidebar} />}
+      <Sidebar />
       <Toasts />
     </div>
   )

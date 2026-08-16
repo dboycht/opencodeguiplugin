@@ -50,6 +50,7 @@ export type WebviewCall =
   | { id: string; method: "copyToClipboard"; params: { text: string } }
   | { id: string; method: "restartServer"; params?: undefined }
   | { id: string; method: "savePrefs"; params: UserPrefs }
+  | { id: string; method: "updateSetting"; params: { key: string; value: unknown } }
 
 // ---------- Extension -> Webview ----------
 
@@ -58,6 +59,14 @@ export interface UserPrefs {
   model?: { providerID: string; modelID: string } | null
   agent?: string | null
   approvalMode?: string
+}
+
+export interface ServerInfo {
+  url: string
+  commandPath: string
+  hostname: string
+  port: number
+  connectMode: string
 }
 
 export interface Snapshot {
@@ -74,6 +83,7 @@ export interface Snapshot {
   config: Config
   statuses: Record<string, string>
   prefs: UserPrefs
+  server: ServerInfo
 }
 
 export type WebviewMessage =

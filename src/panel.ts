@@ -14,7 +14,7 @@ import {
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { OpenCodeManager } from "./manager"
-import type { WebviewCall, WebviewMessage, Snapshot, AttachedFile, UserPrefs } from "./protocol"
+import type { WebviewCall, WebviewMessage, Snapshot, AttachedFile, UserPrefs, ServerInfo } from "./protocol"
 
 const VIEW_TYPE = "opencode.chatView"
 
@@ -72,6 +72,13 @@ export class ChatHost {
       config: {},
       statuses: {},
       prefs: this.readPrefs(),
+      server: {
+        url: this.manager.baseUrl,
+        commandPath: this.manager.options.commandPath,
+        hostname: this.manager.options.hostname,
+        port: this.manager.options.port,
+        connectMode: this.manager.options.connectMode,
+      } as ServerInfo,
     }
     if (!client || this.manager.state !== "connected") return base
 
@@ -254,6 +261,11 @@ export class ChatHost {
         const existing = this.readPrefs()
         const merged: UserPrefs = { ...existing, ...msg.params }
         await this.context.globalState.update("opencode.prefs", merged)
+        return true
+      }
+      case "updateSetting": {
+        const cfg = workspace.getConfiguration("opencode")
+        await cfg.update(msg.params.key, msg.params.value, true)
         return true
       }
       default:

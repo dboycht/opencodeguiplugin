@@ -44,8 +44,9 @@ export function Chat() {
   return (
     <div class="chat">
       <div class="chat-header">
-        <button class="icon-btn chat-menu" onClick={toggleSidebar} title="切换会话列表">
-          <IconMenu size={15} />
+        <button class="btn btn-ghost btn-sm chat-menu" onClick={toggleSidebar} title="会话管理（Esc 或点击空白处收起）">
+          <IconMenu size={14} />
+          <span>会话</span>
         </button>
         <div class="chat-title">
           <span class="chat-title-text">{session?.title ?? "新会话"}</span>

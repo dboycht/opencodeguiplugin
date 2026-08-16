@@ -6,6 +6,7 @@ import { ModelPicker } from "./ModelPicker"
 import { AgentPicker } from "./AgentPicker"
 import { ApprovalModePicker } from "./ApprovalModePicker"
 import { CommandPicker } from "./CommandPicker"
+import { ContextRing } from "./ContextRing"
 import { IconSend, IconStop, IconFile, IconClose, IconCommand } from "./icons"
 import type { PromptPart } from "../src/types"
 
@@ -151,6 +152,7 @@ export function Composer() {
             <CommandPicker />
           </div>
           <div class="composer-actions">
+            <ContextRing />
             <span class="composer-hint">Enter 发送 · Shift+Enter 换行 · / 命令</span>
             {busy ? (
               <button class="btn btn-stop" onClick={() => void abortSession()} title="中断当前生成">

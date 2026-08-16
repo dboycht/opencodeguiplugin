@@ -33,13 +33,29 @@ export const todos = signal<Todo[]>([])
 export const permissions = signal<Permission[]>([])
 export const busyIds = signal<Set<string>>(new Set())
 export const directory = signal("")
+export const server = signal<{ url: string; commandPath: string; hostname: string; port: number; connectMode: string }>({
+  url: "",
+  commandPath: "opencode",
+  hostname: "127.0.0.1",
+  port: 4096,
+  connectMode: "auto",
+})
 
 export const view = signal<"chat" | "settings">("chat")
 export const search = signal("")
-export const sidebarOpen = signal(typeof window !== "undefined" ? window.innerWidth > 640 : true)
+export const sidebarOpen = signal(typeof window !== "undefined" ? window.innerWidth >= 720 : false)
+export const sidebarTab = signal<"sessions" | "settings">("sessions")
 
 export function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
+}
+
+export function openSidebar() {
+  sidebarOpen.value = true
+}
+
+export function closeSidebar() {
+  sidebarOpen.value = false
 }
 
 export interface Toast {
@@ -130,6 +146,7 @@ export function loadSnapshot(s: Snapshot) {
     agents.value = s.agents
     commands.value = s.commands
     config.value = s.config
+    if (s.server) server.value = s.server
 
     const prefs = s.prefs ?? {}
     if (prefs.model) {
@@ -567,5 +584,14 @@ export async function revertMessage(messageId: string) {
     await refreshMessages()
   } catch (err) {
     toast((err as Error).message, "error", "回退消息失败")
+  }
+}
+
+export async function updateSetting(key: string, value: unknown) {
+  try {
+    await call("updateSetting", { key, value })
+    toast("设置已更新", "success")
+  } catch (err) {
+    toast((err as Error).message, "error", "更新设置失败")
   }
 }
