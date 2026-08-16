@@ -1,0 +1,147 @@
+{
+  "name": "opencode-vscode",
+  "displayName": "OpenCode 助手",
+  "description": "OpenCode 的 VS Code 图形界面插件：中文对话、会话管理、模型切换、工具调用可视化，无需终端。",
+  "version": "1.0.1",
+  "publisher": "dboycht",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dboycht/opencodeguiplugin"
+  },
+  "homepage": "https://github.com/dboycht/opencodeguiplugin#readme",
+  "bugs": {
+    "url": "https://github.com/dboycht/opencodeguiplugin/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Chat",
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "opencode",
+    "ai",
+    "chat",
+    "assistant",
+    "coding",
+    "agent",
+    "中文"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "opencode.open",
+        "title": "OpenCode: 打开对话面板",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.newSession",
+        "title": "OpenCode: 新建会话",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.pickSession",
+        "title": "OpenCode: 切换会话",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.startServer",
+        "title": "OpenCode: 启动/重连服务",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.stopServer",
+        "title": "OpenCode: 停止服务",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.attachSelection",
+        "title": "OpenCode: 将选中代码加入对话",
+        "category": "OpenCode"
+      },
+      {
+        "command": "opencode.explainSelection",
+        "title": "OpenCode: 解释选中代码",
+        "category": "OpenCode"
+      }
+    ],
+    "configuration": {
+      "title": "OpenCode 助手",
+      "properties": {
+        "opencode.commandPath": {
+          "type": "string",
+          "default": "opencode",
+          "markdownDescription": "opencode 可执行文件路径或命令名（例如 `opencode` 或绝对路径）。"
+        },
+        "opencode.hostname": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "opencode 服务监听的主机名。"
+        },
+        "opencode.port": {
+          "type": "number",
+          "default": 4096,
+          "description": "opencode 服务监听的端口。"
+        },
+        "opencode.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "扩展激活时自动启动 opencode 服务。"
+        },
+        "opencode.connectMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "manual"
+          ],
+          "default": "auto",
+          "enumDescriptions": [
+            "自动：优先连接已运行的服务，否则自行启动 `opencode serve`。",
+            "手动：仅连接已运行的服务，不自动启动。"
+          ],
+          "description": "连接模式。"
+        },
+        "opencode.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "新建会话时默认使用的模型（格式：provider/model），留空则使用 opencode 全局默认。"
+        },
+        "opencode.uiLanguage": {
+          "type": "string",
+          "enum": [
+            "zh-CN",
+            "en"
+          ],
+          "default": "zh-CN",
+          "description": "界面语言。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "node esbuild.js && vsce package",
+    "vscode:prepublish": "node esbuild.js --production"
+  },
+  "dependencies": {
+    "@preact/signals": "^1.3.0",
+    "highlight.js": "^11.9.0",
+    "markdown-it": "^14.1.0",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
+  }
+}
