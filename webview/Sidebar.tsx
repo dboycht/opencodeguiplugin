@@ -22,10 +22,12 @@ import {
   providers,
   agents,
   config,
+  appVersion,
   updateSetting,
   toast,
 } from "./store"
 import { call } from "./api"
+import { t, lang, setLang } from "./i18n"
 import {
   IconPlus,
   IconSearch,
@@ -85,10 +87,10 @@ export function Sidebar() {
           <span class="brand-name">OpenCode</span>
         </div>
         <div class="sidebar-head-actions">
-          <button class="icon-btn new-btn" onClick={() => void createSession()} title="新建会话">
+          <button class="icon-btn new-btn" onClick={() => void createSession()} title={t("sidebar.newSession")}>
             <IconPlus size={16} />
           </button>
-          <button class="icon-btn" onClick={closeSidebar} title="收起侧栏（Esc）">
+          <button class="icon-btn" onClick={closeSidebar} title={t("sidebar.close")}>
             <IconClose size={16} />
           </button>
         </div>
@@ -99,14 +101,14 @@ export function Sidebar() {
           class={`sidebar-tab${sidebarTab.value === "sessions" ? " active" : ""}`}
           onClick={() => (sidebarTab.value = "sessions")}
         >
-          会话
+          {t("sessions.tab")}
         </button>
         <button
           class={`sidebar-tab${sidebarTab.value === "settings" ? " active" : ""}`}
           onClick={() => (sidebarTab.value = "settings")}
         >
           <IconSettings size={13} />
-          设置
+          {t("settings.tab")}
         </button>
       </div>
 
@@ -115,7 +117,7 @@ export function Sidebar() {
           <div class="sidebar-search">
             <IconSearch size={14} />
             <input
-              placeholder="搜索会话…"
+              placeholder={t("sidebar.search")}
               value={search.value}
               onInput={(e) => (search.value = (e.target as HTMLInputElement).value)}
             />
@@ -176,7 +178,7 @@ export function Sidebar() {
               )
             })}
             {filteredSessions.value.length === 0 && (
-              <div class="session-empty">暂无会话，点击右上角 + 新建</div>
+              <div class="session-empty">{t("sidebar.empty")}</div>
             )}
           </div>
         </>
@@ -188,7 +190,9 @@ export function Sidebar() {
         <div class="foot-status">
           {connected.value ? <span class="dot ok" /> : <span class="dot bad" />}
           <span class="foot-status-text">
-            {connected.value ? `已连接 · v${version.value}` : connError.value || "未连接"}
+            {connected.value
+              ? `${t("sidebar.connected")} · v${version.value}`
+              : connError.value || t("sidebar.notConnected")}
           </span>
         </div>
       </div>
@@ -205,7 +209,7 @@ function SettingsPanel() {
   const restart = async () => {
     try {
       await call("restartServer")
-      toast("正在重新连接…", "info")
+      toast(t("settings.reconnect"), "info")
     } catch {
       /* 状态由连接事件驱动 */
     }
@@ -214,30 +218,34 @@ function SettingsPanel() {
   const savePort = () => {
     const n = parseInt(port, 10)
     if (!Number.isNaN(n)) void updateSetting("port", n)
-    else toast("端口必须是数字", "warning")
+    else toast("PORT_INVALID", "warning")
   }
 
   return (
     <div class="settings-panel">
       <section class="settings-section">
-        <h3>服务</h3>
-        <Row label="状态">
-          {connected.value ? <span class="pill ok">已连接</span> : <span class="pill bad">未连接</span>}
+        <h3>{t("settings.service")}</h3>
+        <Row label={t("settings.status")}>
+          {connected.value ? (
+            <span class="pill ok">{t("sidebar.connected")}</span>
+          ) : (
+            <span class="pill bad">{t("sidebar.notConnected")}</span>
+          )}
         </Row>
-        <Row label="版本">{version.value || "—"}</Row>
-        <Row label="地址">{server.value.url || "—"}</Row>
-        <Row label="目录">{directory.value || "—"}</Row>
+        <Row label={t("settings.version")}>{version.value || "—"}</Row>
+        <Row label={t("settings.url")}>{server.value.url || "—"}</Row>
+        <Row label={t("settings.directory")}>{directory.value || "—"}</Row>
         <div class="settings-actions">
-          <button class="btn btn-primary btn-sm" onClick={restart} title="重新连接 opencode 服务">
-            重连
+          <button class="btn btn-primary btn-sm" onClick={restart} title={t("settings.reconnect")}>
+            {t("settings.reconnect")}
           </button>
         </div>
       </section>
 
       <section class="settings-section">
-        <h3>环境配置</h3>
+        <h3>{t("settings.env")}</h3>
         <div class="settings-field">
-          <label>命令路径（commandPath）</label>
+          <label>{t("settings.commandPath")}</label>
           <input
             value={cmdPath}
             onInput={(e) => setCmdPath((e.target as HTMLInputElement).value)}
@@ -245,39 +253,63 @@ function SettingsPanel() {
           />
         </div>
         <div class="settings-field">
-          <label>端口（port）</label>
+          <label>{t("settings.port")}</label>
           <input value={port} onInput={(e) => setPort((e.target as HTMLInputElement).value)} onBlur={savePort} />
         </div>
         <div class="settings-field">
-          <label>默认模型</label>
-          <div class="settings-readonly">{config.value.model ?? "（使用 opencode 默认）"}</div>
+          <label>{t("settings.defaultModel")}</label>
+          <div class="settings-readonly">{config.value.model ?? t("settings.defaultModelValue")}</div>
+        </div>
+        <div class="settings-field">
+          <label>{t("settings.language")}</label>
+          <select class="settings-select" value={lang.value} onChange={(e) => setLang((e.target as HTMLSelectElement).value as "zh" | "en")}>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
         </div>
       </section>
 
       <section class="settings-section">
-        <h3>模型与代理</h3>
-        <Row label="模型数量">
-          {modelCount} 个（{providers.value.length} 提供商）
+        <h3>{t("settings.modelsAgents")}</h3>
+        <Row label={t("settings.modelCount")}>
+          {modelCount}（{providers.value.length}）
         </Row>
-        <Row label="代理">{agents.value.map((a) => a.name).join("、") || "—"}</Row>
+        <Row label={t("settings.agents")}>{agents.value.map((a) => a.name).join("、") || "—"}</Row>
       </section>
 
       <section class="settings-section">
-        <h3>使用记录</h3>
-        <Row label="会话">{currentSession.value?.title || "—"}</Row>
-        <Row label="消息数">
-          AI {usage.assistantMessages} · 你 {usage.userMessages}
+        <h3>{t("settings.usage")}</h3>
+        <Row label={t("settings.session")}>{currentSession.value?.title || "—"}</Row>
+        <Row label={t("settings.messages")}>
+          AI {usage.assistantMessages} · {t("msg.you")} {usage.userMessages}
         </Row>
-        <Row label="工具调用">{usage.toolCalls} 次</Row>
-        <Row label="Token 用量">
-          {fmtTokens(usage.input)} 输入 / {fmtTokens(usage.output)} 输出 / {fmtTokens(usage.reasoning)} 思考
+        <Row label={t("settings.toolCalls")}>{usage.toolCalls}</Row>
+        <Row label={t("settings.totalTokens")}>{fmtTokens(usage.total)}</Row>
+        <Row label={t("settings.tokenDetail")}>
+          {t("tok.input")} {fmtTokens(usage.input)} · {t("tok.output")} {fmtTokens(usage.output)} ·{" "}
+          {t("tok.reasoning")} {fmtTokens(usage.reasoning)}
         </Row>
-        <Row label="成本">${usage.cost.toFixed(4)}</Row>
+        <Row label={t("settings.cacheIO")}>
+          {t("tok.read")} {fmtTokens(usage.cacheRead)} · {t("tok.write")} {fmtTokens(usage.cacheWrite)}
+        </Row>
+        <Row label={t("settings.cost")}>${usage.cost.toFixed(4)}</Row>
       </section>
 
-      <section class="settings-section settings-tip">
-        更改连接配置后需点击「重连」生效；命令路径与端口会写入 VS Code 设置（opencode.*）。
+      <section class="settings-section">
+        <h3>{t("settings.about")}</h3>
+        <Row label={t("settings.plugin")}>
+          {t("app.name")} v{appVersion.value || "—"}
+        </Row>
+        <Row label={t("settings.publisher")}>dboycht</Row>
+        <Row label={t("settings.backend")}>{version.value || "—"}</Row>
+        <div class="settings-actions">
+          <a class="about-link" href="https://github.com/dboycht/opencodeguiplugin" target="_blank" rel="noreferrer">
+            github.com/dboycht/opencodeguiplugin
+          </a>
+        </div>
       </section>
+
+      <section class="settings-section settings-tip">{t("settings.tip")}</section>
     </div>
   )
 }

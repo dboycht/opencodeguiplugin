@@ -1,5 +1,6 @@
 import type { Permission } from "../src/types"
 import { respondPermission } from "./store"
+import { t } from "./i18n"
 import { IconWarn } from "./icons"
 
 export function PermissionCard({ permission }: { permission: Permission }) {
@@ -12,7 +13,7 @@ export function PermissionCard({ permission }: { permission: Permission }) {
       <div class="permission-head">
         <span class="permission-ic"><IconWarn size={14} /></span>
         <div class="permission-info">
-          <div class="permission-title">{permission.title || "需要授权"}</div>
+          <div class="permission-title">{permission.title || t("perm.need")}</div>
           <div class="permission-detail">
             {permission.type}
             {pattern ? ` · ${pattern}` : ""}
@@ -21,13 +22,13 @@ export function PermissionCard({ permission }: { permission: Permission }) {
       </div>
       <div class="permission-actions">
         <button class="btn btn-allow" onClick={() => void respondPermission(permission.id, "once")}>
-          允许一次
+          {t("perm.once")}
         </button>
         <button class="btn btn-allow-all" onClick={() => void respondPermission(permission.id, "always", true)}>
-          始终允许
+          {t("perm.always")}
         </button>
         <button class="btn btn-deny" onClick={() => void respondPermission(permission.id, "reject")}>
-          拒绝
+          {t("perm.reject")}
         </button>
       </div>
     </div>

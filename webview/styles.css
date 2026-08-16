@@ -1630,6 +1630,16 @@ body.vscode-high-contrast .hljs-class {
   border-color: var(--input-focus);
 }
 
+.settings-select {
+  padding: 6px 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 12.5px;
+  outline: none;
+}
+
 .settings-readonly {
   font-size: 12.5px;
   padding: 6px 8px;
@@ -1642,6 +1652,23 @@ body.vscode-high-contrast .hljs-class {
   font-size: 11.5px;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.about-link {
+  display: inline-block;
+  color: var(--link);
+  font-size: 12px;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
+.activity-first {
+  color: var(--ok);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- 上下文占用环 ---------- */

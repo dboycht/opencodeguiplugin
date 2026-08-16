@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks"
-import { lastActiveTool, abortSession, messages } from "./store"
+import { lastActiveTool, abortSession, messages, roundMetrics } from "./store"
+import { t, t2 } from "./i18n"
 import { IconSpinner, IconStop } from "./icons"
 
 function fmtTime(sec: number): string {
@@ -29,6 +30,11 @@ export function ActivityBar() {
   const elapsed = Math.floor((now - start) / 1000)
   const tool = lastActiveTool.value
 
+  // 首 token 延迟：从发送到收到第一个增量
+  const metrics = roundMetrics.value
+  const firstTokenMs =
+    metrics && metrics.firstTokenAt !== null && metrics.sentAt > 0 ? metrics.firstTokenAt - metrics.sentAt : null
+
   // 当前 assistant 消息的 token 统计
   const assistant = [...messages.value].reverse().find((m) => m.info.role === "assistant")
   const tokens = (assistant?.info as any)?.tokens as { input?: number; output?: number; reasoning?: number } | undefined
@@ -49,23 +55,28 @@ export function ActivityBar() {
     <div class="activity-bar">
       <div class="activity-head">
         <IconSpinner size={14} class="spin" />
-        <span class="activity-label">OpenCode 正在处理…</span>
+        <span class="activity-label">{t("activity.processing")}</span>
         {tool && (
           <span class="activity-tool">
-            使用 <code>{tool}</code>
+            {t("activity.using")} <code>{tool}</code>
           </span>
         )}
         <span class="activity-time">{fmtTime(elapsed)}</span>
+        {firstTokenMs !== null && (
+          <span class="activity-first" title={t("activity.firstTokenTip")}>
+            {t2("activity.firstToken", { s: (firstTokenMs / 1000).toFixed(1) })}
+          </span>
+        )}
         {bits.length > 0 && <span class="activity-tokens">{bits.join(" · ")} tokens</span>}
         <span class="activity-spacer" />
-        <button class="btn btn-stop btn-sm" onClick={() => void abortSession()} title="停止当前生成（Ctrl+Shift+P：OpenCode 停止服务）">
+        <button class="btn btn-stop btn-sm" onClick={() => void abortSession()} title={t("activity.stop")}>
           <IconStop size={14} />
-          <span>停止</span>
+          <span>{t("activity.stop")}</span>
         </button>
       </div>
       {reasoningPreview && (
         <div class="activity-reasoning">
-          <span class="activity-reasoning-label">思考中</span>
+          <span class="activity-reasoning-label">{t("activity.thinking")}</span>
           <span class="activity-reasoning-text">{tailPreview(reasoningPreview, 240)}</span>
         </div>
       )}

@@ -80,6 +80,7 @@ export class ChatHost {
         port: this.manager.options.port,
         connectMode: this.manager.options.connectMode,
       } as ServerInfo,
+      appVersion: this.context.extension.packageJSON?.version ?? "",
     }
     if (!client || this.manager.state !== "connected") return base
 
@@ -120,7 +121,12 @@ export class ChatHost {
 
   private readPrefs(): UserPrefs {
     try {
-      return this.context.globalState.get<UserPrefs>("opencode.prefs", {})
+      const p = this.context.globalState.get<UserPrefs>("opencode.prefs", {})
+      if (!p.language) {
+        const uiLang = workspace.getConfiguration("opencode").get<string>("uiLanguage", "zh-CN")
+        p.language = uiLang
+      }
+      return p
     } catch {
       return {}
     }

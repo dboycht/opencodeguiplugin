@@ -16,6 +16,7 @@ import type {
 import type { Snapshot } from "../src/protocol"
 import type { PromptInput } from "../src/client"
 import { call } from "./api"
+import { lang } from "./i18n"
 
 // ---------- 基础状态 ----------
 export const connected = signal(false)
@@ -34,6 +35,7 @@ export const todos = signal<Todo[]>([])
 export const permissions = signal<Permission[]>([])
 export const busyIds = signal<Set<string>>(new Set())
 export const directory = signal("")
+export const appVersion = signal("")
 export const server = signal<{ url: string; commandPath: string; hostname: string; port: number; connectMode: string }>({
   url: "",
   commandPath: "opencode",
@@ -142,6 +144,8 @@ export const sessionUsage = computed(() => {
   let input = 0
   let output = 0
   let reasoning = 0
+  let cacheRead = 0
+  let cacheWrite = 0
   let cost = 0
   let assistantMessages = 0
   let userMessages = 0
@@ -154,6 +158,8 @@ export const sessionUsage = computed(() => {
         input += t.input ?? 0
         output += t.output ?? 0
         reasoning += t.reasoning ?? 0
+        cacheRead += t.cache?.read ?? 0
+        cacheWrite += t.cache?.write ?? 0
       }
       cost += (m.info as any).cost ?? 0
       toolCalls += m.parts.filter((p) => p.type === "tool").length
@@ -161,8 +167,12 @@ export const sessionUsage = computed(() => {
       userMessages++
     }
   }
-  return { input, output, reasoning, cost, assistantMessages, userMessages, toolCalls }
+  const total = input + output + reasoning + cacheRead + cacheWrite
+  return { input, output, reasoning, cacheRead, cacheWrite, total, cost, assistantMessages, userMessages, toolCalls }
 })
+
+/** 本轮对话的耗时指标（发送时间 / 首 token 到达时间），用于展示首 token 延迟与总耗时 */
+export const roundMetrics = signal<{ sentAt: number; firstTokenAt: number | null } | null>(null)
 
 // ---------- Toast ----------
 let toastSeq = 0
@@ -189,6 +199,7 @@ export function loadSnapshot(s: Snapshot) {
     commands.value = s.commands
     config.value = s.config
     if (s.server) server.value = s.server
+    if (s.appVersion) appVersion.value = s.appVersion
 
     const prefs = s.prefs ?? {}
     if (prefs.model) {
@@ -207,6 +218,7 @@ export function loadSnapshot(s: Snapshot) {
     }
     if (prefs.agent !== undefined) agent.value = prefs.agent
     if (prefs.approvalMode) approvalMode.value = prefs.approvalMode as ApprovalMode
+    if (prefs.language === "en" || prefs.language === "zh") lang.value = prefs.language
 
     loaded.value = true
   })
@@ -276,6 +288,10 @@ export function handleEvent(raw: OpenCodeEvent) {
       if (!p) return
       if (p.sessionID !== currentId.value) return
       if (typeof p.delta !== "string" || !p.delta) return
+      // 记录首 token 到达时间
+      if (roundMetrics.value && roundMetrics.value.firstTokenAt === null) {
+        roundMetrics.value = { ...roundMetrics.value, firstTokenAt: Date.now() }
+      }
       applyDelta(p.sessionID, p.messageID, p.partID, p.field, p.delta)
       break
     }
@@ -641,6 +657,7 @@ export async function sendPrompt(text: string): Promise<boolean> {
   const set = new Set(busyIds.value)
   set.add(id)
   busyIds.value = set
+  roundMetrics.value = { sentAt: Date.now(), firstTokenAt: null }
 
   try {
     await call("sendPrompt", { sessionId: id, body })

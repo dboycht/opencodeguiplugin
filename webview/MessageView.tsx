@@ -6,6 +6,7 @@ import { ToolCall } from "./ToolCall"
 import { IconUser, IconRobot, IconCopy, IconBack, IconCheck } from "./icons"
 import { call } from "./api"
 import { isBusy } from "./store"
+import { t } from "./i18n"
 
 function modelLabel(m: Message): string {
   if (m.role === "assistant") return `${m.providerID}/${m.modelID}`
@@ -62,18 +63,19 @@ function MessageViewInner({ message, last }: { message: MessageWithParts; last?:
       <div class="msg-body">
         <div class="msg-meta">
           {isUser ? (
-            <span class="msg-role">你</span>
+            <span class="msg-role">{t("msg.you")}</span>
           ) : (
             <>
               <span class="msg-role">{modelLabel(message.info)}</span>
-              {streaming && <span class="msg-streaming">正在生成…</span>}
+              {streaming && <span class="msg-streaming">{t("msg.generating")}</span>}
             </>
           )}
         </div>
 
         {error && (
           <div class="msg-error">
-            {(error as any).data?.message ?? "请求出错"} {isUser ? "" : "（可点击回退后重试）"}
+            {(error as any).data?.message ?? "Error"}
+            {isUser ? "" : t("msg.errorSuffix")}
           </div>
         )}
 
@@ -107,11 +109,11 @@ function MessageViewInner({ message, last }: { message: MessageWithParts; last?:
 
         <div class="msg-actions">
           {!isUser && textParts.length > 0 && (
-            <button class="icon-btn" onClick={copyAll} title="复制回复">
+            <button class="icon-btn" onClick={copyAll} title={t("msg.copy")}>
               {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
             </button>
           )}
-          <button class="icon-btn" onClick={revert} title="回退到此消息之前">
+          <button class="icon-btn" onClick={revert} title={t("msg.revert")}>
             <IconBack size={14} />
           </button>
         </div>
@@ -135,8 +137,8 @@ function Reasoning({ parts }: { parts: Part[] }) {
   return (
     <div class="reasoning">
       <button class="reasoning-head" onClick={() => setOpen((v) => !v)}>
-        <span>🧠 思考过程</span>
-        <span class="reasoning-toggle">{open ? "收起" : "展开"}</span>
+        <span>🧠 {t("msg.thinking")}</span>
+        <span class="reasoning-toggle">{open ? t("msg.collapse") : t("msg.expand")}</span>
       </button>
       {open && <div class="reasoning-body">{text}</div>}
     </div>

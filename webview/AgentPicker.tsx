@@ -1,10 +1,11 @@
 import { agent, agents } from "./store"
 import { Dropdown } from "./Dropdown"
+import { t } from "./i18n"
 import { IconChevron, IconCheck } from "./icons"
 
 export function currentAgentLabel(): string {
   const a = agent.value
-  if (!a) return "默认"
+  if (!a) return t("sidebar.defaultAgent")
   return agents.value.find((x) => x.name === a)?.name ?? a
 }
 
@@ -16,21 +17,21 @@ export function AgentPicker() {
       width={220}
       align="right"
       trigger={(_, toggle) => (
-        <button class="picker-trigger" onClick={toggle} title="选择智能体（Agent）">
-          <span class="picker-prefix">智能体</span>
+        <button class="picker-trigger" onClick={toggle} title={t("composer.agent")}>
+          <span class="picker-prefix">{t("composer.agent")}</span>
           <span class="picker-label">{currentAgentLabel()}</span>
           <IconChevron size={14} />
         </button>
       )}
     >
-      <div class="picker-group-title">智能体</div>
+      <div class="picker-group-title">{t("composer.agent")}</div>
       <div class="picker-list">
         <button
           class={`picker-item${agent.value === null ? " selected" : ""}`}
           onClick={() => (agent.value = null)}
-          title="使用默认智能体"
+          title={t("sidebar.defaultAgent")}
         >
-          <span class="picker-item-name">默认</span>
+          <span class="picker-item-name">{t("sidebar.defaultAgent")}</span>
           {agent.value === null && <IconCheck size={14} />}
         </button>
         {primary.map((a) => {

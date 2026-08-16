@@ -2,6 +2,7 @@ import { useRef } from "preact/hooks"
 import { computed } from "@preact/signals"
 import { currentId, drafts, attachments, isBusy, sendPrompt, abortSession, commands } from "./store"
 import { call } from "./api"
+import { t } from "./i18n"
 import { ModelPicker } from "./ModelPicker"
 import { AgentPicker } from "./AgentPicker"
 import { ApprovalModePicker } from "./ApprovalModePicker"
@@ -134,7 +135,7 @@ export function Composer() {
         <textarea
           ref={taRef}
           class="composer-input"
-          placeholder="向 OpenCode 提问…（Enter 发送，Shift+Enter 换行，输入 / 查看命令）"
+          placeholder={t("composer.placeholder")}
           rows={1}
           value={draft.value}
           onInput={onInput}
@@ -142,9 +143,9 @@ export function Composer() {
         />
         <div class="composer-toolbar">
           <div class="composer-pickers">
-            <button class="btn btn-ghost btn-sm" onClick={attachFiles} title="添加本地文件作为对话上下文">
+            <button class="btn btn-ghost btn-sm" onClick={attachFiles} title={t("composer.attach")}>
               <IconFile size={14} />
-              <span>附件</span>
+              <span>{t("composer.attach")}</span>
             </button>
             <ModelPicker />
             <AgentPicker />
@@ -153,16 +154,16 @@ export function Composer() {
           </div>
           <div class="composer-actions">
             <ContextRing />
-            <span class="composer-hint">Enter 发送 · Shift+Enter 换行 · / 命令</span>
+            <span class="composer-hint">{t("composer.hint")}</span>
             {busy ? (
-              <button class="btn btn-stop" onClick={() => void abortSession()} title="中断当前生成">
+              <button class="btn btn-stop" onClick={() => void abortSession()} title={t("composer.stop")}>
                 <IconStop size={14} />
-                <span>停止</span>
+                <span>{t("composer.stop")}</span>
               </button>
             ) : (
-              <button class="btn btn-send" onClick={() => void submit()} disabled={!draft.value.trim()} title="发送消息">
+              <button class="btn btn-send" onClick={() => void submit()} disabled={!draft.value.trim()} title={t("composer.send")}>
                 <IconSend size={14} />
-                <span>发送</span>
+                <span>{t("composer.send")}</span>
               </button>
             )}
           </div>

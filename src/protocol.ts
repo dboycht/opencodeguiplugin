@@ -60,6 +60,7 @@ export interface UserPrefs {
   model?: { providerID: string; modelID: string } | null
   agent?: string | null
   approvalMode?: string
+  language?: string
 }
 
 export interface ServerInfo {
@@ -85,6 +86,7 @@ export interface Snapshot {
   statuses: Record<string, string>
   prefs: UserPrefs
   server: ServerInfo
+  appVersion: string
 }
 
 export type WebviewMessage =

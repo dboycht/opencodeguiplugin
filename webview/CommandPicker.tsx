@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks"
 import { commands, sendCommand } from "./store"
 import { Dropdown } from "./Dropdown"
+import { t } from "./i18n"
 import { IconCommand, IconChevron, IconSearch } from "./icons"
 
 export function CommandPicker() {
@@ -17,9 +18,9 @@ export function CommandPicker() {
       width={300}
       align="right"
       trigger={(_, toggle) => (
-        <button class="picker-trigger" onClick={toggle} title="运行原生命令（/命令）">
+        <button class="picker-trigger" onClick={toggle} title={t("composer.command")}>
           <IconCommand size={14} />
-          <span class="picker-label">命令</span>
+          <span class="picker-label">{t("composer.command")}</span>
           <IconChevron size={14} />
         </button>
       )}
@@ -27,7 +28,7 @@ export function CommandPicker() {
       <div class="picker-search">
         <IconSearch size={14} />
         <input
-          placeholder="搜索命令…"
+          placeholder={t("composer.searchCommand")}
           value={q}
           onInput={(e) => setQ((e.target as HTMLInputElement).value)}
         />
@@ -41,7 +42,7 @@ export function CommandPicker() {
               setQ("")
               void sendCommand(c.name, "")
             }}
-            title={c.description ?? `运行 /${c.name}`}
+            title={c.description ?? `/${c.name}`}
           >
             <IconCommand size={13} />
             <span class="picker-item-name">
@@ -50,7 +51,7 @@ export function CommandPicker() {
             </span>
           </button>
         ))}
-        {list.length === 0 && <div class="picker-empty">未找到匹配命令</div>}
+        {list.length === 0 && <div class="picker-empty">{t("composer.empty")}</div>}
       </div>
     </Dropdown>
   )

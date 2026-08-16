@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks"
 import type { ToolPart } from "../src/types"
 import { IconTerminal, IconFile, IconSearch, IconRobot, IconCheck, IconWarn, IconSpinner, IconChevron } from "./icons"
 import { escapeHtml } from "./markdown"
+import { t } from "./i18n"
 
 function toolIcon(tool: string) {
   if (tool === "bash" || tool === "shell") return IconTerminal
@@ -84,7 +85,7 @@ export function ToolCall({ part }: { part: ToolPart }) {
 
   return (
     <div class={`tool-call tool-${s.status}`}>
-      <button class="tool-head" onClick={() => setOpen((v) => !v)} title={open ? "收起输出" : "展开输出"}>
+      <button class="tool-head" onClick={() => setOpen((v) => !v)} title={open ? t("msg.collapse") : t("msg.expand")}>
         <span class="tool-ic"><Icon size={14} /></span>
         <span class="tool-name">{title || part.tool}</span>
         {summary && summary !== title && <span class="tool-summary">{summary}</span>}
@@ -96,7 +97,7 @@ export function ToolCall({ part }: { part: ToolPart }) {
         <div class="tool-body">
           {summary && (
             <div class="tool-input">
-              <span class="tool-input-label">输入</span>
+              <span class="tool-input-label">{t("tool.input")}</span>
               <code>{summary}</code>
             </div>
           )}
@@ -107,7 +108,7 @@ export function ToolCall({ part }: { part: ToolPart }) {
               dangerouslySetInnerHTML={{ __html: escapeHtml(output) }}
             />
           )}
-          {running && !output && <div class="tool-running-hint">执行中，等待输出…</div>}
+          {running && !output && <div class="tool-running-hint">{t("tool.running")}</div>}
         </div>
       )}
     </div>

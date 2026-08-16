@@ -1,5 +1,6 @@
 import { computed } from "@preact/signals"
 import { messages, model, providers } from "./store"
+import { t, t2 } from "./i18n"
 
 function fmtTokens(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
@@ -30,7 +31,11 @@ export function ContextRing() {
   return (
     <div
       class="context-ring-wrap"
-      title={limit > 0 ? `上下文占用：${fmtTokens(used)} / ${fmtTokens(limit)} tokens（${pct}%）` : "暂无上下文统计"}
+      title={
+        limit > 0
+          ? t2("context.title", { used: fmtTokens(used), limit: fmtTokens(limit), pct: pct })
+          : t("context.none")
+      }
     >
       <div class="context-ring">
         <svg width="34" height="34" viewBox="0 0 36 36">

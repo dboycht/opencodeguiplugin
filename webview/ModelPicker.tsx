@@ -1,11 +1,12 @@
 import { useState } from "preact/hooks"
 import { model, providers } from "./store"
 import { Dropdown } from "./Dropdown"
+import { t } from "./i18n"
 import { IconChevron, IconCheck, IconSearch } from "./icons"
 
 export function currentModelLabel(): string {
   const m = model.value
-  if (!m) return "选择模型"
+  if (!m) return t("composer.model")
   const p = providers.value.find((p) => p.id === m.providerID)
   const mm = p?.models[m.modelID]
   return mm?.name ?? m.modelID
@@ -18,8 +19,8 @@ export function ModelPicker() {
     <Dropdown
       width={320}
       trigger={(_, toggle) => (
-        <button class="picker-trigger" onClick={toggle} title="选择模型">
-          <span class="picker-prefix">模型</span>
+        <button class="picker-trigger" onClick={toggle} title={t("composer.model")}>
+          <span class="picker-prefix">{t("composer.model")}</span>
           <span class="picker-label">{currentModelLabel()}</span>
           <IconChevron size={14} />
         </button>
@@ -28,7 +29,7 @@ export function ModelPicker() {
       <div class="picker-search">
         <IconSearch size={14} />
         <input
-          placeholder="搜索模型…"
+          placeholder={t("composer.searchModel")}
           value={q}
           onInput={(e) => setQ((e.target as HTMLInputElement).value)}
         />
