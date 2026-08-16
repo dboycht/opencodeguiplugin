@@ -30,6 +30,7 @@ export type WebviewCall =
   | { id: string; method: "unshareSession"; params: { sessionId: string } }
   | { id: string; method: "summarizeSession"; params: { sessionId: string } }
   | { id: string; method: "sendPrompt"; params: { sessionId: string; body: PromptInput } }
+  | { id: string; method: "sendCommand"; params: { sessionId: string; command: string; args: string } }
   | { id: string; method: "abort"; params: { sessionId: string } }
   | {
       id: string

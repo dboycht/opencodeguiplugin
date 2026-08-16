@@ -4,14 +4,14 @@ import type {
   Config,
   MessageWithParts,
   OpenCodeEvent,
-  Part,
+  PromptPart,
   Provider,
   Session,
   Todo,
 } from "./types"
 
 export interface PromptInput {
-  parts: Part[]
+  parts: PromptPart[]
   model?: { providerID: string; modelID: string }
   agent?: string
   noReply?: boolean
@@ -173,6 +173,17 @@ export class OpenCodeClient {
 
   promptAsync(id: string, body: PromptInput): Promise<void> {
     return this.request<void>(`/session/${encodeURIComponent(id)}/prompt_async`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  }
+
+  runCommand(
+    id: string,
+    body: { command: string; arguments?: string; agent?: string; model?: { providerID: string; modelID: string } },
+  ): Promise<MessageWithParts> {
+    return this.request<MessageWithParts>(`/session/${encodeURIComponent(id)}/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

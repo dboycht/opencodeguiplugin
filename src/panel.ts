@@ -174,6 +174,14 @@ export class ChatHost {
         await client.promptAsync(sessionId, body)
         return true
       }
+      case "sendCommand": {
+        const { sessionId, command, args } = msg.params
+        this.currentSessionId = sessionId
+        void client
+          .runCommand(sessionId, { command, arguments: args })
+          .catch((err) => this.post({ type: "result", id: `cmd:${sessionId}`, ok: false, error: (err as Error).message }))
+        return true
+      }
       case "abort":
         return client.abortSession(msg.params.sessionId)
       case "respondPermission":

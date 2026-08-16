@@ -377,3 +377,10 @@ export interface MessageWithParts {
   info: Message
   parts: Part[]
 }
+
+/** 发送消息时可用的 part 输入类型（id 可选，无需 sessionID/messageID） */
+export type PromptPart =
+  | { id?: string; type: "text"; text: string; synthetic?: boolean; ignored?: boolean }
+  | { id?: string; type: "file"; mime: string; filename?: string; url: string }
+  | { id?: string; type: "agent"; name: string }
+  | { id?: string; type: "subtask"; prompt: string; description: string; agent: string }

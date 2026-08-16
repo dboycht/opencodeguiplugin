@@ -7,6 +7,7 @@ import type {
   OpenCodeEvent,
   Part,
   Permission,
+  PromptPart,
   Provider,
   Session,
   Todo,
@@ -53,9 +54,20 @@ export const toasts = signal<Toast[]>([])
 export const model = signal<{ providerID: string; modelID: string } | null>(null)
 export const agent = signal<string | null>(null)
 
+// 审批模式（类似 Claude 的权限模式）
+export type ApprovalMode = "ask" | "accept-edits" | "accept-all" | "plan"
+export const approvalMode = signal<ApprovalMode>("ask")
+
+export const APPROVAL_MODES: { id: ApprovalMode; label: string; desc: string }[] = [
+  { id: "ask", label: "默认询问", desc: "编辑、命令等操作都询问你" },
+  { id: "accept-edits", label: "自动接受编辑", desc: "自动接受文件编辑，命令仍询问" },
+  { id: "accept-all", label: "全部自动", desc: "自动接受所有操作，不打断" },
+  { id: "plan", label: "计划模式", desc: "只读，拒绝编辑和命令执行" },
+]
+
 // 草稿与附件（按会话）
 export const drafts = signal<Record<string, string>>({})
-export const attachments = signal<Record<string, Part[]>>({})
+export const attachments = signal<Record<string, PromptPart[]>>({})
 
 // ---------- 派生状态 ----------
 export const currentSession = computed<Session | null>(() => {
@@ -131,6 +143,23 @@ export function setDisconnected(err: string) {
 }
 
 // ---------- 事件处理 ----------
+function autoPermissionResponse(p: Permission): { response: "once" | "always" | "reject"; remember?: boolean } | null {
+  const mode = approvalMode.value
+  if (mode === "ask") return null
+  const t = p.type
+  const isWrite = t === "edit" || t === "bash" || t === "doom_loop"
+  if (mode === "plan") {
+    return isWrite ? { response: "reject" } : { response: "always", remember: true }
+  }
+  if (mode === "accept-edits") {
+    return t === "edit" ? { response: "always", remember: true } : null
+  }
+  if (mode === "accept-all") {
+    return { response: "always", remember: true }
+  }
+  return null
+}
+
 export function handleEvent(raw: OpenCodeEvent) {
   const ev = raw as OpenCodeEvent
   switch (ev.type) {
@@ -201,6 +230,11 @@ export function handleEvent(raw: OpenCodeEvent) {
     }
     case "permission.updated": {
       const p = (ev as any).properties as Permission
+      const auto = autoPermissionResponse(p)
+      if (auto) {
+        void respondPermission(p.id, auto.response, auto.remember)
+        return
+      }
       permissions.value = permissions.value.some((x) => x.id === p.id)
         ? permissions.value.map((x) => (x.id === p.id ? p : x))
         : [...permissions.value, p]
@@ -413,8 +447,19 @@ export async function sendPrompt(text: string): Promise<boolean> {
     if (!created) return false
     return sendPrompt(text)
   }
-  const parts: Part[] = [...(attachments.value[id] ?? [])]
-  parts.push({ id: `p:${Date.now()}`, sessionID: id, messageID: "", type: "text", text })
+
+  // 斜杠命令检测（如 /compact、/new）
+  const slash = /^\/(\S+)(?:\s+([\s\S]*))?$/.exec(text.trim())
+  if (slash) {
+    const name = slash[1]
+    const known = commands.value.some((c) => c.name === name)
+    if (known) {
+      return sendCommand(name, (slash[2] ?? "").trim())
+    }
+  }
+
+  const parts: PromptPart[] = [...(attachments.value[id] ?? [])]
+  parts.push({ type: "text", text })
   const body: PromptInput = { parts }
   if (model.value) body.model = { ...model.value }
   if (agent.value) body.agent = agent.value
@@ -435,6 +480,30 @@ export async function sendPrompt(text: string): Promise<boolean> {
     s.delete(id)
     busyIds.value = s
     toast((err as Error).message, "error", "发送失败")
+    return false
+  }
+}
+
+export async function sendCommand(name: string, args: string): Promise<boolean> {
+  const id = currentId.value
+  if (!id) {
+    const created = await createSession()
+    if (!created) return false
+    return sendCommand(name, args)
+  }
+  drafts.value = { ...drafts.value, [id]: "" }
+  const set = new Set(busyIds.value)
+  set.add(id)
+  busyIds.value = set
+  try {
+    await call("sendCommand", { sessionId: id, command: name, args })
+    void refreshMessages()
+    return true
+  } catch (err) {
+    const s = new Set(busyIds.value)
+    s.delete(id)
+    busyIds.value = s
+    toast((err as Error).message, "error", "命令执行失败")
     return false
   }
 }

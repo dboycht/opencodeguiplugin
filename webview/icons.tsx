@@ -155,3 +155,13 @@ export const IconSpinner = (p: IconProps) => (
     <path d="M21 12a9 9 0 1 1-6.2-8.6" />
   </svg>
 )
+export const IconShield = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M20 13c0 5-3.5 7.5-8 8-4.5-.5-8-3-8-8V6l8-3 8 3Z" />
+  </Svg>
+)
+export const IconCommand = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+  </Svg>
+)

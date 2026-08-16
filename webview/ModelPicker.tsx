@@ -19,6 +19,7 @@ export function ModelPicker() {
   return (
     <div class="picker">
       <button class="picker-trigger" onClick={toggle} title="选择模型">
+        <span class="picker-prefix">模型</span>
         <span class="picker-label">{currentModelLabel()}</span>
         <IconChevron size={14} />
       </button>

@@ -4,7 +4,7 @@ import { IconChevron, IconCheck } from "./icons"
 
 export function currentAgentLabel(): string {
   const a = agent.value
-  if (!a) return "默认代理"
+  if (!a) return "默认"
   return agents.value.find((x) => x.name === a)?.name ?? a
 }
 
@@ -15,12 +15,14 @@ export function AgentPicker() {
 
   return (
     <div class="picker">
-      <button class="picker-trigger" onClick={() => setOpen((v) => !v)} title="选择代理">
+      <button class="picker-trigger" onClick={() => setOpen((v) => !v)} title="选择智能体（Agent）">
+        <span class="picker-prefix">智能体</span>
         <span class="picker-label">{currentAgentLabel()}</span>
         <IconChevron size={14} />
       </button>
       {open && (
         <div class="picker-menu picker-menu-right">
+          <div class="picker-group-title">智能体</div>
           <div class="picker-list">
             <button
               class={`picker-item${agent.value === null ? " selected" : ""}`}
@@ -29,7 +31,7 @@ export function AgentPicker() {
                 setOpen(false)
               }}
             >
-              <span class="picker-item-name">默认代理</span>
+              <span class="picker-item-name">默认</span>
               {agent.value === null && <IconCheck size={14} />}
             </button>
             {primary.map((a) => {
