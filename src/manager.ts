@@ -155,12 +155,21 @@ export class OpenCodeManager extends EventEmitter {
 
   private finishConnect() {
     this.setState("connected")
-    // 订阅事件流
+    this.startEventStream()
+  }
+
+  private startEventStream() {
     this.cancelEvent()
-    this.cancelEvent = this.client?.subscribe(
+    if (!this.client || this.disposed) return
+    this.cancelEvent = this.client.subscribe(
       (ev: OpenCodeEvent) => this.emit("event", ev),
-      (err) => this.emit("eventError", err),
-    ) ?? (() => {})
+      () => {
+        // 事件流断开后自动重连
+        if (this.state === "connected" && !this.disposed) {
+          setTimeout(() => this.startEventStream(), 2000)
+        }
+      },
+    )
   }
 
   stop() {

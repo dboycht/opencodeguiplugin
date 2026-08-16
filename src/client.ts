@@ -274,6 +274,8 @@ export class OpenCodeClient {
             }
           }
         }
+        // 流正常结束（服务端主动断开）
+        onError?.(new Error("事件流已断开"))
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           onError?.(err as Error)

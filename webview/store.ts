@@ -230,6 +230,14 @@ export function handleEvent(raw: OpenCodeEvent) {
       upsertPart(part, delta)
       break
     }
+    case "message.part.delta": {
+      const p = (ev as any).properties
+      if (!p) return
+      if (p.sessionID !== currentId.value) return
+      if (typeof p.delta !== "string" || !p.delta) return
+      appendDelta(p.messageID, p.partID, p.delta)
+      break
+    }
     case "message.removed": {
       const { messageID } = (ev as any).properties
       messages.value = messages.value.filter((m) => m.info.id !== messageID)
@@ -332,6 +340,19 @@ function upsertPart(part: Part, delta?: string) {
     }
   } else {
     msg.parts.push(part)
+  }
+  messages.value = arr
+}
+
+function appendDelta(messageID: string, partID: string, delta: string) {
+  const arr = messages.value.map((m) => ({ info: m.info, parts: [...m.parts] }))
+  const msg = arr.find((m) => m.info.id === messageID)
+  if (!msg) return
+  const idx = msg.parts.findIndex((p) => p.id === partID)
+  if (idx < 0) return
+  const part = msg.parts[idx]
+  if (part.type === "text" || part.type === "reasoning") {
+    msg.parts[idx] = { ...part, text: part.text + delta } as Part
   }
   messages.value = arr
 }
@@ -517,7 +538,6 @@ export async function sendPrompt(text: string): Promise<boolean> {
 
   try {
     await call("sendPrompt", { sessionId: id, body })
-    void refreshMessages()
     return true
   } catch (err) {
     const s = new Set(busyIds.value)
@@ -541,7 +561,6 @@ export async function sendCommand(name: string, args: string): Promise<boolean> 
   busyIds.value = set
   try {
     await call("sendCommand", { sessionId: id, command: name, args })
-    void refreshMessages()
     return true
   } catch (err) {
     const s = new Set(busyIds.value)

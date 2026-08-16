@@ -290,6 +290,11 @@ export interface MessagePartUpdated {
   properties: { part: Part; delta?: string }
 }
 
+export interface MessagePartDelta {
+  type: "message.part.delta"
+  properties: { sessionID: string; messageID: string; partID: string; field: string; delta: string }
+}
+
 export interface MessageUpdated {
   type: "message.updated"
   properties: { info: Message }
@@ -358,6 +363,7 @@ export interface FileEdited {
 export type OpenCodeEvent =
   | TodoUpdated
   | MessagePartUpdated
+  | MessagePartDelta
   | MessageUpdated
   | MessageRemoved
   | MessagePartRemoved
