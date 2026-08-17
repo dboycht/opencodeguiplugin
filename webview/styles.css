@@ -866,15 +866,20 @@ textarea {
 
 .composer-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  min-width: 0;
 }
 
 .composer-hint {
   font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- 按钮 ---------- */
