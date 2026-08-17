@@ -478,17 +478,32 @@ function patchMessage(
 }
 
 /**
- * message.part.updated：服务端发送的权威全量 part，直接整体替换。
+ * message.part.updated：服务端发送的权威全量 part。
+ * 直接覆盖，但忽略「旧快照」（比当前文本短且是当前文本的前缀），
+ * 避免流式回退导致内容被反复「回退+追加」而累积重复。
  */
 function upsertPart(part: Part) {
-  if ((part.type === "text" || part.type === "reasoning") && typeof (part as any).text === "string") {
-    fullTexts.set(part.id, (part as any).text)
-  }
   patchMessage(part.messageID, part.sessionID, (m) => {
     const parts = [...m.parts]
     const idx = parts.findIndex((p) => p.id === part.id)
-    if (idx >= 0) parts[idx] = part
-    else parts.push(part)
+    const isTextLike = (part.type === "text" || part.type === "reasoning") && typeof (part as any).text === "string"
+    if (idx < 0) {
+      if (isTextLike) fullTexts.set(part.id, (part as any).text)
+      parts.push(part)
+      return { info: m.info, parts }
+    }
+    const existing = parts[idx]
+    if (isTextLike) {
+      const newText = (part as any).text
+      const curText = (existing as any).text ?? ""
+      if (newText.length < curText.length && curText.startsWith(newText)) {
+        return m // 旧快照，忽略（不更新 fullTexts，避免污染防重判断）
+      }
+      fullTexts.set(part.id, newText)
+      parts[idx] = part
+    } else {
+      parts[idx] = part
+    }
     return { info: m.info, parts }
   })
 }

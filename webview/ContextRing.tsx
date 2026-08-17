@@ -22,8 +22,8 @@ export function ContextRing() {
     }
     const assistant = [...messages.value].reverse().find((x) => x.info.role === "assistant")
     const tokens = (assistant?.info as any)?.tokens
-    // 上下文占用 = 输入（含缓存命中）+ 缓存读取
-    const used = (tokens?.input ?? 0) + (tokens?.cache?.read ?? 0)
+    // 上下文占用 = 最后一次请求的总输入（input 已含历史与缓存命中，勿再加 cache.read，避免重复计数）
+    const used = tokens?.input ?? 0
     // 优先级：自定义 > 模型自带 > 估算
     const known = custom > 0 || modelLimit > 0
     const limit = custom > 0 ? custom : modelLimit > 0 ? modelLimit : FALLBACK_LIMIT
