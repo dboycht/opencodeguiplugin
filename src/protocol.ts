@@ -53,6 +53,8 @@ export type WebviewCall =
   | { id: string; method: "restartServer"; params?: undefined }
   | { id: string; method: "savePrefs"; params: UserPrefs }
   | { id: string; method: "updateSetting"; params: { key: string; value: unknown } }
+  | { id: string; method: "checkOpencode"; params?: undefined }
+  | { id: string; method: "installOpencode"; params?: undefined }
 
 // ---------- Extension -> Webview ----------
 
@@ -62,6 +64,7 @@ export interface UserPrefs {
   agent?: string | null
   approvalMode?: string
   language?: string
+  onboarded?: boolean
 }
 
 export interface ServerInfo {

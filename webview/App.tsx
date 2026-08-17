@@ -4,6 +4,7 @@ import * as store from "./store"
 import { Sidebar } from "./Sidebar"
 import { Chat } from "./Chat"
 import { Toasts } from "./Toasts"
+import { Onboarding } from "./Onboarding"
 import { call } from "./api"
 
 export function App() {
@@ -74,11 +75,17 @@ export function App() {
 
   return (
     <div class="app">
-      <div class="main">
-        <Chat />
-      </div>
-      {store.sidebarOpen.value && <div class="drawer-backdrop" onClick={store.closeSidebar} />}
-      <Sidebar />
+      {store.loaded.value && store.onboarded.value === false ? (
+        <Onboarding />
+      ) : (
+        <>
+          <div class="main">
+            <Chat />
+          </div>
+          {store.sidebarOpen.value && <div class="drawer-backdrop" onClick={store.closeSidebar} />}
+          <Sidebar />
+        </>
+      )}
       <Toasts />
     </div>
   )

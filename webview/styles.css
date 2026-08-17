@@ -1698,6 +1698,160 @@ body.vscode-high-contrast .hljs-class {
   color: #ffa657;
 }
 
+/* ---------- 首次引导 ---------- */
+.onboarding {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.ob-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.ob-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.ob-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.ob-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ob-lang {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.ob-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.ob-lang-options {
+  display: flex;
+  gap: 8px;
+}
+
+.ob-lang-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.ob-lang-btn:hover {
+  border-color: var(--input-focus);
+}
+
+.ob-lang-btn.selected {
+  border-color: var(--input-focus);
+  background: var(--list-active);
+  font-weight: 600;
+}
+
+.ob-status {
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ob-checking,
+.ob-ok,
+.ob-bad {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ob-checking {
+  color: var(--muted);
+}
+
+.ob-ok {
+  color: var(--ok);
+}
+
+.ob-bad {
+  color: var(--danger);
+}
+
+.ob-install {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.ob-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ob-output {
+  width: 100%;
+  max-height: 140px;
+  overflow: auto;
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  margin: 0;
+}
+
+.ob-actions {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ob-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 /* ---------- 窄屏适配 ---------- */
 @media (max-width: 520px) {
   .composer-hint {

@@ -2,7 +2,7 @@
 import { call } from "./api"
 
 export type Lang = "zh" | "en"
-export const lang = signal<Lang>("zh")
+export const lang = signal<Lang>("en")
 
 type Dict = Record<string, string>
 
@@ -139,6 +139,23 @@ const zh: Dict = {
   "plan.reject": "拒绝",
   "plan.close": "关闭",
   "plan.noChanges": "计划已完成，暂无文件变更",
+
+  // 首次引导
+  "ob.title": "欢迎使用 OpenCode 助手",
+  "ob.sub": "OpenCode 是基于 AI 的编程助手。先做几项检查即可开始。",
+  "ob.chooseLang": "选择界面语言",
+  "ob.checking": "正在检测 opencode…",
+  "ob.installed": "已检测到 opencode",
+  "ob.notInstalled": "未检测到 opencode",
+  "ob.installNow": "一键安装 opencode",
+  "ob.installing": "安装中，请稍候…",
+  "ob.npmNote": "将执行：npm install -g opencode-ai（约需 1-3 分钟）。安装后请重启 VS Code。",
+  "ob.manualNote": "未检测到 npm。请打开终端手动执行安装命令。",
+  "ob.installDone": "安装完成！请重启 VS Code 后重新打开插件。",
+  "ob.enter": "开始使用",
+  "ob.enterAnyway": "跳过，直接进入",
+  "ob.copyCmd": "复制安装命令",
+  "ob.copied": "已复制",
 }
 
 const en: Dict = {
@@ -261,6 +278,22 @@ const en: Dict = {
   "plan.reject": "Reject",
   "plan.close": "Close",
   "plan.noChanges": "Plan done, no file changes",
+
+  "ob.title": "Welcome to OpenCode Assistant",
+  "ob.sub": "OpenCode is an AI coding assistant. Let's run a few checks first.",
+  "ob.chooseLang": "Choose interface language",
+  "ob.checking": "Checking for opencode…",
+  "ob.installed": "opencode detected",
+  "ob.notInstalled": "opencode not found",
+  "ob.installNow": "Install opencode",
+  "ob.installing": "Installing, please wait…",
+  "ob.npmNote": "This will run: npm install -g opencode-ai (takes 1-3 min). Please restart VS Code after install.",
+  "ob.manualNote": "npm not found. Please run the install command in a terminal manually.",
+  "ob.installDone": "Install complete! Please restart VS Code and reopen the extension.",
+  "ob.enter": "Get started",
+  "ob.enterAnyway": "Skip for now",
+  "ob.copyCmd": "Copy install command",
+  "ob.copied": "Copied",
 }
 
 export function t(key: string): string {

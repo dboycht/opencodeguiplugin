@@ -1,17 +1,5 @@
-import {
-  workspace,
-  window,
-  Uri,
-  ViewColumn,
-  commands,
-  WorkspaceEdit,
-  Range,
-  env,
-  type Webview,
-  type WebviewView,
-  type WebviewViewProvider,
-  type ExtensionContext,
-} from "vscode"
+import { workspace, window, Uri, ViewColumn, commands, WorkspaceEdit, Range, env, type Webview, type WebviewView, type WebviewViewProvider, type ExtensionContext } from "vscode"
+import { spawn, spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { OpenCodeManager } from "./manager"
@@ -123,8 +111,8 @@ export class ChatHost {
     try {
       const p = this.context.globalState.get<UserPrefs>("opencode.prefs", {})
       if (!p.language) {
-        const uiLang = workspace.getConfiguration("opencode").get<string>("uiLanguage", "zh-CN")
-        p.language = uiLang
+        const uiLang = workspace.getConfiguration("opencode").get<string>("uiLanguage", "en")
+        p.language = uiLang === "zh" || uiLang === "zh-CN" ? "zh" : "en"
       }
       return p
     } catch {
@@ -280,6 +268,15 @@ export class ChatHost {
         await cfg.update(msg.params.key, msg.params.value, true)
         return true
       }
+      case "checkOpencode": {
+        return {
+          installed: hasCommand("opencode"),
+          npm: hasCommand("npm"),
+        }
+      }
+      case "installOpencode": {
+        return await installOpencode()
+      }
       default:
         return undefined
     }
@@ -355,6 +352,43 @@ function getNonce(): string {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
   for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length))
   return text
+}
+
+/** 检测命令是否可用（如 opencode / npm） */
+function hasCommand(cmd: string): boolean {
+  try {
+    const r = spawnSync(cmd, ["--version"], {
+      shell: process.platform === "win32",
+      stdio: "ignore",
+      timeout: 8000,
+    })
+    return r.status === 0
+  } catch {
+    return false
+  }
+}
+
+/** 一键安装 opencode（优先 npm，失败时给出官方脚本命令） */
+function installOpencode(): Promise<{ ok: boolean; output: string; command: string }> {
+  return new Promise((resolve) => {
+    const command = process.platform === "win32" ? "npm install -g opencode-ai" : "npm install -g opencode-ai"
+    let output = ""
+    const child = spawn("npm", ["install", "-g", "opencode-ai"], {
+      shell: process.platform === "win32",
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+    child.stdout?.on("data", (d: Buffer) => (output += d.toString()))
+    child.stderr?.on("data", (d: Buffer) => (output += d.toString()))
+    child.on("error", (e) => resolve({ ok: false, output: output + e.message, command }))
+    child.on("exit", (code) => resolve({ ok: code === 0, output: output.slice(-2000), command }))
+    setTimeout(() => {
+      try {
+        child.kill()
+      } catch {
+        /* ignore */
+      }
+    }, 120000)
+  })
 }
 
 function subscribe(

@@ -177,6 +177,30 @@ export const roundMetrics = signal<{ sentAt: number; firstTokenAt: number | null
 /** 输入历史（已发送的 prompt，↑/↓ 切换） */
 export const history = signal<string[]>([])
 
+/** 是否已完成首次引导 */
+export const onboarded = signal<boolean | null>(null)
+
+export function setOnboarded(v: boolean) {
+  onboarded.value = v
+  void call("savePrefs", { onboarded: v })
+}
+
+export async function checkOpencode(): Promise<{ installed: boolean; npm: boolean }> {
+  try {
+    return (await call<{ installed: boolean; npm: boolean }>("checkOpencode")) ?? { installed: false, npm: false }
+  } catch {
+    return { installed: false, npm: false }
+  }
+}
+
+export async function installOpencode(): Promise<{ ok: boolean; output: string; command: string }> {
+  try {
+    return (await call<{ ok: boolean; output: string; command: string }>("installOpencode")) ?? { ok: false, output: "", command: "" }
+  } catch {
+    return { ok: false, output: "", command: "" }
+  }
+}
+
 export function addHistory(text: string) {
   const h = history.value
   if (h[h.length - 1] === text) return
@@ -257,6 +281,7 @@ export function loadSnapshot(s: Snapshot) {
     if (prefs.agent !== undefined) agent.value = prefs.agent
     if (prefs.approvalMode) approvalMode.value = prefs.approvalMode as ApprovalMode
     if (prefs.language === "en" || prefs.language === "zh") lang.value = prefs.language
+    onboarded.value = prefs.onboarded ?? false
 
     loaded.value = true
   })
