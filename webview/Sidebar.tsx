@@ -23,6 +23,7 @@ import {
   agents,
   config,
   appVersion,
+  contextLimit,
   updateSetting,
   toast,
 } from "./store"
@@ -203,6 +204,7 @@ export function Sidebar() {
 function SettingsPanel() {
   const [cmdPath, setCmdPath] = useState(server.value.commandPath)
   const [port, setPort] = useState(String(server.value.port))
+  const [ctxLimit, setCtxLimit] = useState(String(contextLimit.value || 0))
   const modelCount = providers.value.reduce((n, p) => n + Object.keys(p.models).length, 0)
   const usage = sessionUsage.value
 
@@ -219,6 +221,13 @@ function SettingsPanel() {
     const n = parseInt(port, 10)
     if (!Number.isNaN(n)) void updateSetting("port", n)
     else toast("PORT_INVALID", "warning")
+  }
+
+  const saveCtxLimit = () => {
+    const n = parseInt(ctxLimit, 10)
+    const v = Number.isNaN(n) || n < 0 ? 0 : n
+    contextLimit.value = v
+    void updateSetting("contextLimit", v)
   }
 
   return (
@@ -259,6 +268,17 @@ function SettingsPanel() {
         <div class="settings-field">
           <label>{t("settings.defaultModel")}</label>
           <div class="settings-readonly">{config.value.model ?? t("settings.defaultModelValue")}</div>
+        </div>
+        <div class="settings-field">
+          <label>{t("settings.contextLimit")}</label>
+          <input
+            value={ctxLimit}
+            inputmode="numeric"
+            onInput={(e) => setCtxLimit((e.target as HTMLInputElement).value)}
+            onBlur={saveCtxLimit}
+            title={t("settings.contextLimitHint")}
+          />
+          <span class="settings-hint">{t("settings.contextLimitHint")}</span>
         </div>
         <div class="settings-field">
           <label>{t("settings.language")}</label>

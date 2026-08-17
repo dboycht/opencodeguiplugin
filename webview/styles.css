@@ -1927,6 +1927,12 @@ body.vscode-high-contrast .hljs-class {
   word-break: break-all;
 }
 
+.settings-hint {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .settings-tip {
   font-size: 11.5px;
   color: var(--muted);

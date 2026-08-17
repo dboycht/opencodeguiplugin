@@ -114,6 +114,9 @@ export class ChatHost {
         const uiLang = workspace.getConfiguration("opencode").get<string>("uiLanguage", "en")
         p.language = uiLang === "zh" || uiLang === "zh-CN" ? "zh" : "en"
       }
+      if (p.contextLimit === undefined) {
+        p.contextLimit = workspace.getConfiguration("opencode").get<number>("contextLimit", 0)
+      }
       return p
     } catch {
       return {}

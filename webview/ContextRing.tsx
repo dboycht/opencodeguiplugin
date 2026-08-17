@@ -1,5 +1,5 @@
 import { computed } from "@preact/signals"
-import { messages, model, providers } from "./store"
+import { messages, model, providers, contextLimit } from "./store"
 import { t2 } from "./i18n"
 
 function fmtTokens(n: number): string {
@@ -8,34 +8,39 @@ function fmtTokens(n: number): string {
   return String(Math.round(n))
 }
 
-/** 模型未提供上下文上限时的估算值 */
+/** 模型未提供且未自定义时的估算值 */
 const FALLBACK_LIMIT = 200000
 
 export function ContextRing() {
   const info = computed(() => {
+    const custom = contextLimit.value
     const m = model.value
-    let limit = 0
+    let modelLimit = 0
     if (m) {
       const p = providers.value.find((x) => x.id === m.providerID)
-      limit = p?.models[m.modelID]?.limit?.context ?? 0
+      modelLimit = p?.models[m.modelID]?.limit?.context ?? 0
     }
     const assistant = [...messages.value].reverse().find((x) => x.info.role === "assistant")
     const tokens = (assistant?.info as any)?.tokens
     // 上下文占用 = 输入（含缓存命中）+ 缓存读取
     const used = (tokens?.input ?? 0) + (tokens?.cache?.read ?? 0)
-    const known = limit > 0
-    return { used, limit: known ? limit : FALLBACK_LIMIT, known }
+    // 优先级：自定义 > 模型自带 > 估算
+    const known = custom > 0 || modelLimit > 0
+    const limit = custom > 0 ? custom : modelLimit > 0 ? modelLimit : FALLBACK_LIMIT
+    return { used, limit, known, custom }
   })
 
-  const { used, limit, known } = info.value
+  const { used, limit, known, custom } = info.value
   const pct = Math.min(100, Math.round((used / limit) * 100))
   const R = 15.915
   const C = 2 * Math.PI * R
   const color = pct > 90 ? "var(--danger)" : pct > 70 ? "var(--warn)" : "var(--accent)"
 
-  const title = known
-    ? t2("context.title", { used: fmtTokens(used), limit: fmtTokens(limit), pct })
-    : t2("context.titleGuess", { used: fmtTokens(used), pct })
+  const title = custom > 0
+    ? t2("context.titleCustom", { used: fmtTokens(used), limit: fmtTokens(limit), pct })
+    : known
+      ? t2("context.title", { used: fmtTokens(used), limit: fmtTokens(limit), pct })
+      : t2("context.titleGuess", { used: fmtTokens(used), pct })
 
   return (
     <div class="context-ring-wrap" title={title}>
@@ -55,7 +60,7 @@ export function ContextRing() {
           {used > 0 ? `${pct}%` : "0"}
         </span>
       </div>
-      <span class="context-ring-label">{used > 0 ? `${fmtTokens(used)}${known ? `/${fmtTokens(limit)}` : ""}` : "—"}</span>
+      <span class="context-ring-label">{used > 0 ? `${fmtTokens(used)}/${fmtTokens(limit)}` : "—"}</span>
     </div>
   )
 }

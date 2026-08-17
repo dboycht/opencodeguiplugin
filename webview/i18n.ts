@@ -127,6 +127,11 @@ const zh: Dict = {
   "context.title": "上下文占用：{used} / {limit} tokens（{pct}%）",
   "context.none": "暂无上下文统计",
   "context.titleGuess": "上下文占用：{used} tokens（{pct}%，上限未知，按 200k 估算）",
+  "context.titleCustom": "上下文占用：{used} / {limit} tokens（{pct}%，自定义上限）",
+
+  // 设置项
+  "settings.contextLimit": "上下文上限（tokens）",
+  "settings.contextLimitHint": "0 = 自动使用模型上限；模型未提供时可自定义，用于估算上下文占用百分比。",
 
   // 输入提示
   "composer.atHint": "输入 @ 引用文件",
@@ -269,6 +274,10 @@ const en: Dict = {
   "context.title": "Context used: {used} / {limit} tokens ({pct}%)",
   "context.none": "No context stats yet",
   "context.titleGuess": "Context used: {used} tokens ({pct}%, limit unknown, estimated at 200k)",
+  "context.titleCustom": "Context used: {used} / {limit} tokens ({pct}%, custom limit)",
+
+  "settings.contextLimit": "Context limit (tokens)",
+  "settings.contextLimitHint": "0 = auto (use the model's limit); set a custom value when the model doesn't provide one.",
 
   "composer.atHint": "Type @ to reference a file",
   "composer.atEmpty": "No matching file",

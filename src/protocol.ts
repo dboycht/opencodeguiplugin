@@ -65,6 +65,7 @@ export interface UserPrefs {
   approvalMode?: string
   language?: string
   onboarded?: boolean
+  contextLimit?: number
 }
 
 export interface ServerInfo {

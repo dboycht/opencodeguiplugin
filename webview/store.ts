@@ -180,6 +180,9 @@ export const history = signal<string[]>([])
 /** 是否已完成首次引导 */
 export const onboarded = signal<boolean | null>(null)
 
+/** 用户自定义上下文上限（tokens），0 = 自动使用模型上限 */
+export const contextLimit = signal<number>(0)
+
 export function setOnboarded(v: boolean) {
   onboarded.value = v
   void call("savePrefs", { onboarded: v })
@@ -282,6 +285,7 @@ export function loadSnapshot(s: Snapshot) {
     if (prefs.approvalMode) approvalMode.value = prefs.approvalMode as ApprovalMode
     if (prefs.language === "en" || prefs.language === "zh") lang.value = prefs.language
     onboarded.value = prefs.onboarded ?? false
+    contextLimit.value = prefs.contextLimit ?? 0
 
     loaded.value = true
   })
